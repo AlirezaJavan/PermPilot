@@ -1,0 +1,54 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+out/
+build/
+generated/
+
+# Gradle cache
+
+# Sandbox stuff
+_sandbox
+
+# Android Studio captures folder
+captures/
+
+# Kotlin
+.kotlin
+/core/database/schemas/*
+
+# AI tooling
+.claude/
+AUTO_TAGGING_PLAN.md
+ANDROID_PROJECT_BASELINE.md
+MASTER_PLAN.md
+nia-migration-plan.md
+
+# Graphify output
+graphify-out/
+cost.json
+
+# Signing
+*.jks
+*.keystore

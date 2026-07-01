@@ -1,0 +1,20 @@
+#!/bin/sh
+# PermPilot pre-commit hook.
+#
+# Enable it once per clone with:
+#   git config core.hooksPath .githooks
+#
+# Runs the fast local feedback loop before every commit: permpilot-core's JVM unit tests
+# (Robolectric + pure resolve-state logic) and a frontend-only iOS type-check (no full klib
+# codegen, so it stays fast). This is deliberately not the full `./gradlew build` -- that's what
+# CI runs on every PR -- so commits stay quick locally.
+
+set -e
+
+echo "[pre-commit] Running permpilot-core unit tests..."
+./gradlew :permpilot-core:testAndroidHostTest --quiet
+
+echo "[pre-commit] Type-checking iOS actuals (frontend only)..."
+./gradlew :permpilot-core:compileIosMainKotlinMetadata --quiet
+
+echo "[pre-commit] OK"
