@@ -1,0 +1,20 @@
+CREATE TABLE permissionEvent (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    permissionKey TEXT NOT NULL,
+    eventType TEXT NOT NULL,
+    state TEXT,
+    timestampMillis INTEGER NOT NULL
+);
+
+insertEvent:
+INSERT INTO permissionEvent(permissionKey, eventType, state, timestampMillis)
+VALUES (?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM permissionEvent ORDER BY id DESC;
+
+selectForPermission:
+SELECT * FROM permissionEvent WHERE permissionKey = ? ORDER BY id DESC;
+
+clear:
+DELETE FROM permissionEvent;

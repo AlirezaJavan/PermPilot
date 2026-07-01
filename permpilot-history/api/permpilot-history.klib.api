@@ -1,0 +1,125 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <PermPilot:permpilot-history>
+final enum class io.github.alirezajavan.permpilot.history/PermissionEventType : kotlin/Enum<io.github.alirezajavan.permpilot.history/PermissionEventType> { // io.github.alirezajavan.permpilot.history/PermissionEventType|null[0]
+    enum entry Requested // io.github.alirezajavan.permpilot.history/PermissionEventType.Requested|null[0]
+    enum entry Resolved // io.github.alirezajavan.permpilot.history/PermissionEventType.Resolved|null[0]
+    enum entry SettingsOpened // io.github.alirezajavan.permpilot.history/PermissionEventType.SettingsOpened|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot.history/PermissionEventType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot.history/PermissionEventType> // io.github.alirezajavan.permpilot.history/PermissionEventType.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot.history/PermissionEventType // io.github.alirezajavan.permpilot.history/PermissionEventType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot.history/PermissionEventType> // io.github.alirezajavan.permpilot.history/PermissionEventType.values|values#static(){}[0]
+}
+
+abstract interface io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase : app.cash.sqldelight/Transacter { // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase|null[0]
+    abstract val permissionHistoryQueries // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.permissionHistoryQueries|{}permissionHistoryQueries[0]
+        abstract fun <get-permissionHistoryQueries>(): io.github.alirezajavan.permpilot.history/PermissionHistoryQueries // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.permissionHistoryQueries.<get-permissionHistoryQueries>|<get-permissionHistoryQueries>(){}[0]
+
+    final object Companion { // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.Companion|null[0]
+        final val Schema // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.Companion.Schema|{}Schema[0]
+            final fun <get-Schema>(): app.cash.sqldelight.db/SqlSchema<app.cash.sqldelight.db/QueryResult.Value<kotlin/Unit>> // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.Companion.Schema.<get-Schema>|<get-Schema>(){}[0]
+
+        final fun invoke(app.cash.sqldelight.db/SqlDriver): io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase // io.github.alirezajavan.permpilot.history/PermPilotHistoryDatabase.Companion.invoke|invoke(app.cash.sqldelight.db.SqlDriver){}[0]
+    }
+}
+
+abstract interface io.github.alirezajavan.permpilot.history/PermissionHistoryStore { // io.github.alirezajavan.permpilot.history/PermissionHistoryStore|null[0]
+    abstract fun events(): kotlinx.coroutines.flow/Flow<kotlin.collections/List<io.github.alirezajavan.permpilot.history/PermissionHistoryEntry>> // io.github.alirezajavan.permpilot.history/PermissionHistoryStore.events|events(){}[0]
+    abstract fun events(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/Flow<kotlin.collections/List<io.github.alirezajavan.permpilot.history/PermissionHistoryEntry>> // io.github.alirezajavan.permpilot.history/PermissionHistoryStore.events|events(io.github.alirezajavan.permpilot.Permission){}[0]
+    abstract suspend fun clear() // io.github.alirezajavan.permpilot.history/PermissionHistoryStore.clear|clear(){}[0]
+    abstract suspend fun record(io.github.alirezajavan.permpilot/Permission?, io.github.alirezajavan.permpilot.history/PermissionEventType, io.github.alirezajavan.permpilot/PermissionState? = ...) // io.github.alirezajavan.permpilot.history/PermissionHistoryStore.record|record(io.github.alirezajavan.permpilot.Permission?;io.github.alirezajavan.permpilot.history.PermissionEventType;io.github.alirezajavan.permpilot.PermissionState?){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/HistoryPermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot.history/HistoryPermissionController|null[0]
+    constructor <init>(io.github.alirezajavan.permpilot/PermissionController, io.github.alirezajavan.permpilot.history/PermissionHistoryStore, kotlinx.coroutines/CoroutineScope) // io.github.alirezajavan.permpilot.history/HistoryPermissionController.<init>|<init>(io.github.alirezajavan.permpilot.PermissionController;io.github.alirezajavan.permpilot.history.PermissionHistoryStore;kotlinx.coroutines.CoroutineScope){}[0]
+
+    final fun openAppSettings() // io.github.alirezajavan.permpilot.history/HistoryPermissionController.openAppSettings|openAppSettings(){}[0]
+    final fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot.history/HistoryPermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
+    final fun refreshAll() // io.github.alirezajavan.permpilot.history/HistoryPermissionController.refreshAll|refreshAll(){}[0]
+    final fun state(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/StateFlow<io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot.history/HistoryPermissionController.state|state(io.github.alirezajavan.permpilot.Permission){}[0]
+    final suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot.history/HistoryPermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+    final suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot.history/HistoryPermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/PermissionEvent { // io.github.alirezajavan.permpilot.history/PermissionEvent|null[0]
+    constructor <init>(kotlin/Long, kotlin/String, kotlin/String, kotlin/String?, kotlin/Long) // io.github.alirezajavan.permpilot.history/PermissionEvent.<init>|<init>(kotlin.Long;kotlin.String;kotlin.String;kotlin.String?;kotlin.Long){}[0]
+
+    final val eventType // io.github.alirezajavan.permpilot.history/PermissionEvent.eventType|{}eventType[0]
+        final fun <get-eventType>(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionEvent.eventType.<get-eventType>|<get-eventType>(){}[0]
+    final val id // io.github.alirezajavan.permpilot.history/PermissionEvent.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionEvent.id.<get-id>|<get-id>(){}[0]
+    final val permissionKey // io.github.alirezajavan.permpilot.history/PermissionEvent.permissionKey|{}permissionKey[0]
+        final fun <get-permissionKey>(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionEvent.permissionKey.<get-permissionKey>|<get-permissionKey>(){}[0]
+    final val state // io.github.alirezajavan.permpilot.history/PermissionEvent.state|{}state[0]
+        final fun <get-state>(): kotlin/String? // io.github.alirezajavan.permpilot.history/PermissionEvent.state.<get-state>|<get-state>(){}[0]
+    final val timestampMillis // io.github.alirezajavan.permpilot.history/PermissionEvent.timestampMillis|{}timestampMillis[0]
+        final fun <get-timestampMillis>(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionEvent.timestampMillis.<get-timestampMillis>|<get-timestampMillis>(){}[0]
+
+    final fun component1(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionEvent.component1|component1(){}[0]
+    final fun component2(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionEvent.component2|component2(){}[0]
+    final fun component3(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionEvent.component3|component3(){}[0]
+    final fun component4(): kotlin/String? // io.github.alirezajavan.permpilot.history/PermissionEvent.component4|component4(){}[0]
+    final fun component5(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionEvent.component5|component5(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String? = ..., kotlin/Long = ...): io.github.alirezajavan.permpilot.history/PermissionEvent // io.github.alirezajavan.permpilot.history/PermissionEvent.copy|copy(kotlin.Long;kotlin.String;kotlin.String;kotlin.String?;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot.history/PermissionEvent.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot.history/PermissionEvent.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionEvent.toString|toString(){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/PermissionHistoryDriverFactory { // io.github.alirezajavan.permpilot.history/PermissionHistoryDriverFactory|null[0]
+    constructor <init>() // io.github.alirezajavan.permpilot.history/PermissionHistoryDriverFactory.<init>|<init>(){}[0]
+
+    final fun createDriver(): app.cash.sqldelight.db/SqlDriver // io.github.alirezajavan.permpilot.history/PermissionHistoryDriverFactory.createDriver|createDriver(){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/PermissionHistoryEntry { // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry|null[0]
+    constructor <init>(kotlin/Long, kotlin/String, io.github.alirezajavan.permpilot.history/PermissionEventType, kotlin/String?, kotlin/Long) // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.<init>|<init>(kotlin.Long;kotlin.String;io.github.alirezajavan.permpilot.history.PermissionEventType;kotlin.String?;kotlin.Long){}[0]
+
+    final val id // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.id|{}id[0]
+        final fun <get-id>(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.id.<get-id>|<get-id>(){}[0]
+    final val permissionKey // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.permissionKey|{}permissionKey[0]
+        final fun <get-permissionKey>(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.permissionKey.<get-permissionKey>|<get-permissionKey>(){}[0]
+    final val state // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.state|{}state[0]
+        final fun <get-state>(): kotlin/String? // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.state.<get-state>|<get-state>(){}[0]
+    final val timestampMillis // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.timestampMillis|{}timestampMillis[0]
+        final fun <get-timestampMillis>(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.timestampMillis.<get-timestampMillis>|<get-timestampMillis>(){}[0]
+    final val type // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.type|{}type[0]
+        final fun <get-type>(): io.github.alirezajavan.permpilot.history/PermissionEventType // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.type.<get-type>|<get-type>(){}[0]
+
+    final fun component1(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.component1|component1(){}[0]
+    final fun component2(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.component2|component2(){}[0]
+    final fun component3(): io.github.alirezajavan.permpilot.history/PermissionEventType // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.component3|component3(){}[0]
+    final fun component4(): kotlin/String? // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.component4|component4(){}[0]
+    final fun component5(): kotlin/Long // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.component5|component5(){}[0]
+    final fun copy(kotlin/Long = ..., kotlin/String = ..., io.github.alirezajavan.permpilot.history/PermissionEventType = ..., kotlin/String? = ..., kotlin/Long = ...): io.github.alirezajavan.permpilot.history/PermissionHistoryEntry // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.copy|copy(kotlin.Long;kotlin.String;io.github.alirezajavan.permpilot.history.PermissionEventType;kotlin.String?;kotlin.Long){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.alirezajavan.permpilot.history/PermissionHistoryEntry.toString|toString(){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/PermissionHistoryQueries : app.cash.sqldelight/TransacterImpl { // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries|null[0]
+    constructor <init>(app.cash.sqldelight.db/SqlDriver) // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.<init>|<init>(app.cash.sqldelight.db.SqlDriver){}[0]
+
+    final fun <#A1: kotlin/Any> selectAll(kotlin/Function5<kotlin/Long, kotlin/String, kotlin/String, kotlin/String?, kotlin/Long, #A1>): app.cash.sqldelight/Query<#A1> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.selectAll|selectAll(kotlin.Function5<kotlin.Long,kotlin.String,kotlin.String,kotlin.String?,kotlin.Long,0:0>){0§<kotlin.Any>}[0]
+    final fun <#A1: kotlin/Any> selectForPermission(kotlin/String, kotlin/Function5<kotlin/Long, kotlin/String, kotlin/String, kotlin/String?, kotlin/Long, #A1>): app.cash.sqldelight/Query<#A1> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.selectForPermission|selectForPermission(kotlin.String;kotlin.Function5<kotlin.Long,kotlin.String,kotlin.String,kotlin.String?,kotlin.Long,0:0>){0§<kotlin.Any>}[0]
+    final fun clear(): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.clear|clear(){}[0]
+    final fun insertEvent(kotlin/String, kotlin/String, kotlin/String?, kotlin/Long): app.cash.sqldelight.db/QueryResult<kotlin/Long> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.insertEvent|insertEvent(kotlin.String;kotlin.String;kotlin.String?;kotlin.Long){}[0]
+    final fun selectAll(): app.cash.sqldelight/Query<io.github.alirezajavan.permpilot.history/PermissionEvent> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.selectAll|selectAll(){}[0]
+    final fun selectForPermission(kotlin/String): app.cash.sqldelight/Query<io.github.alirezajavan.permpilot.history/PermissionEvent> // io.github.alirezajavan.permpilot.history/PermissionHistoryQueries.selectForPermission|selectForPermission(kotlin.String){}[0]
+}
+
+final class io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore : io.github.alirezajavan.permpilot.history/PermissionHistoryStore { // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore|null[0]
+    constructor <init>(app.cash.sqldelight.db/SqlDriver, kotlinx.coroutines/CoroutineDispatcher = ...) // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore.<init>|<init>(app.cash.sqldelight.db.SqlDriver;kotlinx.coroutines.CoroutineDispatcher){}[0]
+
+    final fun events(): kotlinx.coroutines.flow/Flow<kotlin.collections/List<io.github.alirezajavan.permpilot.history/PermissionHistoryEntry>> // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore.events|events(){}[0]
+    final fun events(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/Flow<kotlin.collections/List<io.github.alirezajavan.permpilot.history/PermissionHistoryEntry>> // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore.events|events(io.github.alirezajavan.permpilot.Permission){}[0]
+    final suspend fun clear() // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore.clear|clear(){}[0]
+    final suspend fun record(io.github.alirezajavan.permpilot/Permission?, io.github.alirezajavan.permpilot.history/PermissionEventType, io.github.alirezajavan.permpilot/PermissionState?) // io.github.alirezajavan.permpilot.history/SqlDelightPermissionHistoryStore.record|record(io.github.alirezajavan.permpilot.Permission?;io.github.alirezajavan.permpilot.history.PermissionEventType;io.github.alirezajavan.permpilot.PermissionState?){}[0]
+}

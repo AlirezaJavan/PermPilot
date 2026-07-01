@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permission.Camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Permission.Microphone -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Permission.LocationWhileInUse -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Permission.LocationAlways (API 29+; requires foreground location above to already be granted) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Permission.Notifications (API 33+, no-op below) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Permission.Contacts -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Permission.Calendar -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- Permission.PhotoLibrary: API 34+ tiers, API 33 tiers, and the pre-33 fallback -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Permission.BluetoothScan: API 31+ permission, pre-31 fallback needs fine location above -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <!-- Permission.NearbyWifiDevices: API 33+ permission, pre-33 fallback needs fine location above -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <!-- Permission.BodySensors (deprecated by Google in favor of granular health permissions) -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <!-- Permission.BodySensorsBackground (API 33+; requires BodySensors above to already be granted) -->
+    <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND" />
+    <!-- Permission.WriteContacts -->
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <!-- Permission.CallPhone / ReadPhoneState / ReadPhoneNumbers / AnswerPhoneCalls -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    <!-- Permission.ReadCallLog / WriteCallLog -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <!-- Permission.SendSms / ReadSms / ReceiveSms -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <!-- Permission.ActivityRecognition (API 29+, pre-29 fallback needs BODY_SENSORS above) -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- Permission.AudioFiles: API 33+ tier, pre-33 fallback via READ_EXTERNAL_STORAGE above -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- Permission.Special.SystemAlertWindow -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Permission.Special.ExactAlarm (API 31+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Permission.Special.IgnoreBatteryOptimizations -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Permission.Special.WriteSettings -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <!-- Permission.Special.ManageExternalStorage (API 30+) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!-- Permission.Special.UsageAccess: purely documentary, since this is an AppOps-gated
+         permission checked via AppOpsManager, not the runtime permission system; declaring it
+         isn't required for the check to work, but is common practice for clarity. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <!-- Permission.Special.DoNotDisturbAccess: the DND-access Settings screen only lists apps
+         that declare this (normal) permission; granting still happens purely in Settings. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- Permission.Special.NotificationListenerAccess needs no uses-permission entry, but the
+         Settings list only shows apps declaring a NotificationListenerService (see the
+         service element inside <application> below). -->
+
+    <!-- Declared not-required so the demo still installs on hardware lacking these features
+         (e.g. Chrome OS/tablets without a camera or GPS); permissions are still requested,
+         and gracefully denied/no-op, at runtime. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.heartrate" android:required="false" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <application
+        android:label="PermPilot Sample">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Required for Permission.Special.NotificationListenerAccess: the Settings list only
+             shows apps that declare a NotificationListenerService bound with this permission. -->
+        <service
+            android:name=".DemoNotificationListenerService"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

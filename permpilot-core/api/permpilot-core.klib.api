@@ -1,0 +1,375 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <PermPilot:permpilot-core>
+final enum class io.github.alirezajavan.permpilot/CalendarAccess : kotlin/Enum<io.github.alirezajavan.permpilot/CalendarAccess> { // io.github.alirezajavan.permpilot/CalendarAccess|null[0]
+    enum entry Full // io.github.alirezajavan.permpilot/CalendarAccess.Full|null[0]
+    enum entry WriteOnly // io.github.alirezajavan.permpilot/CalendarAccess.WriteOnly|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot/CalendarAccess.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot/CalendarAccess> // io.github.alirezajavan.permpilot/CalendarAccess.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/CalendarAccess // io.github.alirezajavan.permpilot/CalendarAccess.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/CalendarAccess> // io.github.alirezajavan.permpilot/CalendarAccess.values|values#static(){}[0]
+}
+
+final enum class io.github.alirezajavan.permpilot/ConfigurationErrorReason : kotlin/Enum<io.github.alirezajavan.permpilot/ConfigurationErrorReason> { // io.github.alirezajavan.permpilot/ConfigurationErrorReason|null[0]
+    enum entry MissingManifestDeclaration // io.github.alirezajavan.permpilot/ConfigurationErrorReason.MissingManifestDeclaration|null[0]
+    enum entry MissingUsageDescription // io.github.alirezajavan.permpilot/ConfigurationErrorReason.MissingUsageDescription|null[0]
+    enum entry NoHostActivity // io.github.alirezajavan.permpilot/ConfigurationErrorReason.NoHostActivity|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot/ConfigurationErrorReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot/ConfigurationErrorReason> // io.github.alirezajavan.permpilot/ConfigurationErrorReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/ConfigurationErrorReason // io.github.alirezajavan.permpilot/ConfigurationErrorReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/ConfigurationErrorReason> // io.github.alirezajavan.permpilot/ConfigurationErrorReason.values|values#static(){}[0]
+}
+
+final enum class io.github.alirezajavan.permpilot/LimitedReason : kotlin/Enum<io.github.alirezajavan.permpilot/LimitedReason> { // io.github.alirezajavan.permpilot/LimitedReason|null[0]
+    enum entry ApproximateLocationOnly // io.github.alirezajavan.permpilot/LimitedReason.ApproximateLocationOnly|null[0]
+    enum entry PartialMediaAccess // io.github.alirezajavan.permpilot/LimitedReason.PartialMediaAccess|null[0]
+    enum entry SelectedContactsOnly // io.github.alirezajavan.permpilot/LimitedReason.SelectedContactsOnly|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot/LimitedReason.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot/LimitedReason> // io.github.alirezajavan.permpilot/LimitedReason.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/LimitedReason // io.github.alirezajavan.permpilot/LimitedReason.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/LimitedReason> // io.github.alirezajavan.permpilot/LimitedReason.values|values#static(){}[0]
+}
+
+abstract interface io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/PermissionController|null[0]
+    abstract fun openAppSettings() // io.github.alirezajavan.permpilot/PermissionController.openAppSettings|openAppSettings(){}[0]
+    abstract fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot/PermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
+    abstract fun refreshAll() // io.github.alirezajavan.permpilot/PermissionController.refreshAll|refreshAll(){}[0]
+    abstract fun state(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/StateFlow<io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/PermissionController.state|state(io.github.alirezajavan.permpilot.Permission){}[0]
+    abstract suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+    abstract suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/PermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
+}
+
+sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alirezajavan.permpilot/Permission|null[0]
+    sealed interface PlatformLimited : io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/Permission.PlatformLimited|null[0]
+
+    sealed interface Runtime : io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/Permission.Runtime|null[0]
+
+    sealed interface Special : io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/Permission.Special|null[0]
+
+    final class Calendar : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Calendar|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/CalendarAccess = ...) // io.github.alirezajavan.permpilot/Permission.Calendar.<init>|<init>(io.github.alirezajavan.permpilot.CalendarAccess){}[0]
+
+        final val access // io.github.alirezajavan.permpilot/Permission.Calendar.access|{}access[0]
+            final fun <get-access>(): io.github.alirezajavan.permpilot/CalendarAccess // io.github.alirezajavan.permpilot/Permission.Calendar.access.<get-access>|<get-access>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/CalendarAccess // io.github.alirezajavan.permpilot/Permission.Calendar.component1|component1(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/CalendarAccess = ...): io.github.alirezajavan.permpilot/Permission.Calendar // io.github.alirezajavan.permpilot/Permission.Calendar.copy|copy(io.github.alirezajavan.permpilot.CalendarAccess){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Calendar.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Calendar.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Calendar.toString|toString(){}[0]
+    }
+
+    final object ActivityRecognition : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ActivityRecognition|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ActivityRecognition.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ActivityRecognition.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ActivityRecognition.toString|toString(){}[0]
+    }
+
+    final object AnswerPhoneCalls : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.AnswerPhoneCalls|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.AnswerPhoneCalls.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.AnswerPhoneCalls.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.AnswerPhoneCalls.toString|toString(){}[0]
+    }
+
+    final object AppTrackingTransparency : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.AppTrackingTransparency|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.AppTrackingTransparency.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.AppTrackingTransparency.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.AppTrackingTransparency.toString|toString(){}[0]
+    }
+
+    final object AudioFiles : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.AudioFiles|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.AudioFiles.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.AudioFiles.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.AudioFiles.toString|toString(){}[0]
+    }
+
+    final object BluetoothScan : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BluetoothScan|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.BluetoothScan.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.BluetoothScan.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.BluetoothScan.toString|toString(){}[0]
+    }
+
+    final object BodySensors : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BodySensors|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.BodySensors.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.BodySensors.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.BodySensors.toString|toString(){}[0]
+    }
+
+    final object BodySensorsBackground : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BodySensorsBackground|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.BodySensorsBackground.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.BodySensorsBackground.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.BodySensorsBackground.toString|toString(){}[0]
+    }
+
+    final object CallPhone : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.CallPhone|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.CallPhone.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.CallPhone.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.CallPhone.toString|toString(){}[0]
+    }
+
+    final object Camera : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Camera|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Camera.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Camera.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Camera.toString|toString(){}[0]
+    }
+
+    final object Contacts : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Contacts|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Contacts.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Contacts.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Contacts.toString|toString(){}[0]
+    }
+
+    final object DoNotDisturbAccess : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.DoNotDisturbAccess|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.DoNotDisturbAccess.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.DoNotDisturbAccess.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.DoNotDisturbAccess.toString|toString(){}[0]
+    }
+
+    final object ExactAlarm : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.ExactAlarm|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ExactAlarm.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ExactAlarm.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ExactAlarm.toString|toString(){}[0]
+    }
+
+    final object IgnoreBatteryOptimizations : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations.toString|toString(){}[0]
+    }
+
+    final object LocalNetwork : io.github.alirezajavan.permpilot/Permission.PlatformLimited { // io.github.alirezajavan.permpilot/Permission.LocalNetwork|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.LocalNetwork.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.LocalNetwork.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.LocalNetwork.toString|toString(){}[0]
+    }
+
+    final object LocationAlways : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.LocationAlways|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.LocationAlways.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.LocationAlways.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.LocationAlways.toString|toString(){}[0]
+    }
+
+    final object LocationWhileInUse : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.LocationWhileInUse|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.LocationWhileInUse.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.LocationWhileInUse.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.LocationWhileInUse.toString|toString(){}[0]
+    }
+
+    final object ManageExternalStorage : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.toString|toString(){}[0]
+    }
+
+    final object Microphone : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Microphone|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Microphone.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Microphone.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Microphone.toString|toString(){}[0]
+    }
+
+    final object NearbyWifiDevices : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.NearbyWifiDevices|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.NearbyWifiDevices.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.NearbyWifiDevices.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.NearbyWifiDevices.toString|toString(){}[0]
+    }
+
+    final object NotificationListenerAccess : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.NotificationListenerAccess|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.NotificationListenerAccess.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.NotificationListenerAccess.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.NotificationListenerAccess.toString|toString(){}[0]
+    }
+
+    final object Notifications : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Notifications|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Notifications.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Notifications.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Notifications.toString|toString(){}[0]
+    }
+
+    final object PhotoLibrary : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.PhotoLibrary|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.PhotoLibrary.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.PhotoLibrary.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.PhotoLibrary.toString|toString(){}[0]
+    }
+
+    final object ReadCallLog : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ReadCallLog|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ReadCallLog.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ReadCallLog.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ReadCallLog.toString|toString(){}[0]
+    }
+
+    final object ReadPhoneNumbers : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ReadPhoneNumbers|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ReadPhoneNumbers.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ReadPhoneNumbers.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ReadPhoneNumbers.toString|toString(){}[0]
+    }
+
+    final object ReadPhoneState : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ReadPhoneState|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ReadPhoneState.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ReadPhoneState.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ReadPhoneState.toString|toString(){}[0]
+    }
+
+    final object ReadSms : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ReadSms|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ReadSms.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ReadSms.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ReadSms.toString|toString(){}[0]
+    }
+
+    final object ReceiveSms : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ReceiveSms|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ReceiveSms.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ReceiveSms.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ReceiveSms.toString|toString(){}[0]
+    }
+
+    final object Reminders : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Reminders|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Reminders.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Reminders.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Reminders.toString|toString(){}[0]
+    }
+
+    final object SendSms : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.SendSms|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.SendSms.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.SendSms.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.SendSms.toString|toString(){}[0]
+    }
+
+    final object SpeechRecognition : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.SpeechRecognition|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.SpeechRecognition.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.SpeechRecognition.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.SpeechRecognition.toString|toString(){}[0]
+    }
+
+    final object SystemAlertWindow : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.SystemAlertWindow|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.SystemAlertWindow.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.SystemAlertWindow.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.SystemAlertWindow.toString|toString(){}[0]
+    }
+
+    final object UsageAccess : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.UsageAccess|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.UsageAccess.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.UsageAccess.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.UsageAccess.toString|toString(){}[0]
+    }
+
+    final object WriteCallLog : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.WriteCallLog|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.WriteCallLog.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.WriteCallLog.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.WriteCallLog.toString|toString(){}[0]
+    }
+
+    final object WriteContacts : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.WriteContacts|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.WriteContacts.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.WriteContacts.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.WriteContacts.toString|toString(){}[0]
+    }
+
+    final object WriteSettings : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.WriteSettings|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.WriteSettings.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.WriteSettings.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.WriteSettings.toString|toString(){}[0]
+    }
+}
+
+sealed interface io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState|null[0]
+    final class ConfigurationError : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/ConfigurationErrorReason) // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.<init>|<init>(io.github.alirezajavan.permpilot.ConfigurationErrorReason){}[0]
+
+        final val reason // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.reason|{}reason[0]
+            final fun <get-reason>(): io.github.alirezajavan.permpilot/ConfigurationErrorReason // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/ConfigurationErrorReason // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.component1|component1(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/ConfigurationErrorReason = ...): io.github.alirezajavan.permpilot/PermissionState.ConfigurationError // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.copy|copy(io.github.alirezajavan.permpilot.ConfigurationErrorReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.toString|toString(){}[0]
+    }
+
+    final class Denied : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.Denied|null[0]
+        constructor <init>(kotlin/Boolean) // io.github.alirezajavan.permpilot/PermissionState.Denied.<init>|<init>(kotlin.Boolean){}[0]
+
+        final val canRequestAgain // io.github.alirezajavan.permpilot/PermissionState.Denied.canRequestAgain|{}canRequestAgain[0]
+            final fun <get-canRequestAgain>(): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Denied.canRequestAgain.<get-canRequestAgain>|<get-canRequestAgain>(){}[0]
+
+        final fun component1(): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Denied.component1|component1(){}[0]
+        final fun copy(kotlin/Boolean = ...): io.github.alirezajavan.permpilot/PermissionState.Denied // io.github.alirezajavan.permpilot/PermissionState.Denied.copy|copy(kotlin.Boolean){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Denied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.Denied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.Denied.toString|toString(){}[0]
+    }
+
+    final class Limited : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.Limited|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/LimitedReason) // io.github.alirezajavan.permpilot/PermissionState.Limited.<init>|<init>(io.github.alirezajavan.permpilot.LimitedReason){}[0]
+
+        final val reason // io.github.alirezajavan.permpilot/PermissionState.Limited.reason|{}reason[0]
+            final fun <get-reason>(): io.github.alirezajavan.permpilot/LimitedReason // io.github.alirezajavan.permpilot/PermissionState.Limited.reason.<get-reason>|<get-reason>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/LimitedReason // io.github.alirezajavan.permpilot/PermissionState.Limited.component1|component1(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/LimitedReason = ...): io.github.alirezajavan.permpilot/PermissionState.Limited // io.github.alirezajavan.permpilot/PermissionState.Limited.copy|copy(io.github.alirezajavan.permpilot.LimitedReason){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Limited.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.Limited.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.Limited.toString|toString(){}[0]
+    }
+
+    final object Granted : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.Granted|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Granted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.Granted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.Granted.toString|toString(){}[0]
+    }
+
+    final object NotDetermined : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.NotDetermined|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.NotDetermined.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.NotDetermined.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.NotDetermined.toString|toString(){}[0]
+    }
+
+    final object PermanentlyDenied : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.PermanentlyDenied|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.PermanentlyDenied.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.PermanentlyDenied.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.PermanentlyDenied.toString|toString(){}[0]
+    }
+
+    final object Restricted : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.Restricted|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionState.Restricted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionState.Restricted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionState.Restricted.toString|toString(){}[0]
+    }
+}
+
+final class io.github.alirezajavan.permpilot/FakePermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/FakePermissionController|null[0]
+    constructor <init>(io.github.alirezajavan.permpilot/PermissionState = ...) // io.github.alirezajavan.permpilot/FakePermissionController.<init>|<init>(io.github.alirezajavan.permpilot.PermissionState){}[0]
+
+    final val openAppSettingsCalls // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettingsCalls|{}openAppSettingsCalls[0]
+        final fun <get-openAppSettingsCalls>(): kotlin.collections/List<io.github.alirezajavan.permpilot/Permission?> // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettingsCalls.<get-openAppSettingsCalls>|<get-openAppSettingsCalls>(){}[0]
+    final val requestCalls // io.github.alirezajavan.permpilot/FakePermissionController.requestCalls|{}requestCalls[0]
+        final fun <get-requestCalls>(): kotlin.collections/List<io.github.alirezajavan.permpilot/Permission.Runtime> // io.github.alirezajavan.permpilot/FakePermissionController.requestCalls.<get-requestCalls>|<get-requestCalls>(){}[0]
+
+    final fun openAppSettings() // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettings|openAppSettings(){}[0]
+    final fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
+    final fun refreshAll() // io.github.alirezajavan.permpilot/FakePermissionController.refreshAll|refreshAll(){}[0]
+    final fun setState(io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState) // io.github.alirezajavan.permpilot/FakePermissionController.setState|setState(io.github.alirezajavan.permpilot.Permission;io.github.alirezajavan.permpilot.PermissionState){}[0]
+    final fun state(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/StateFlow<io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/FakePermissionController.state|state(io.github.alirezajavan.permpilot.Permission){}[0]
+    final suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/FakePermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+    final suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/FakePermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
+}
+
+final class io.github.alirezajavan.permpilot/IosPermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/IosPermissionController|null[0]
+    constructor <init>() // io.github.alirezajavan.permpilot/IosPermissionController.<init>|<init>(){}[0]
+
+    final fun openAppSettings() // io.github.alirezajavan.permpilot/IosPermissionController.openAppSettings|openAppSettings(){}[0]
+    final fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot/IosPermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
+    final fun refreshAll() // io.github.alirezajavan.permpilot/IosPermissionController.refreshAll|refreshAll(){}[0]
+    final fun state(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/StateFlow<io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/IosPermissionController.state|state(io.github.alirezajavan.permpilot.Permission){}[0]
+    final suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/IosPermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+    final suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/IosPermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
+}

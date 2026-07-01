@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!--
+	One key per Permission.Runtime catalog entry that has a real iOS native prompt -- see
+	docs/permission-matrix.md's "iOS Info.plist key(s)" column and permpilot-core's
+	IosInfoPlistRequirements.kt (the source of truth this list is generated from). A missing key
+	here surfaces as PermissionState.ConfigurationError(MissingUsageDescription) at runtime instead
+	of the process crashing outright, but the key still has to actually be present to use the
+	permission for real -- see docs/ios-info-plist-checklist.md for the full per-permission mapping.
+	-->
+	<key>NSCameraUsageDescription</key>
+	<string>PermPilot's sample app uses the camera to demonstrate the Camera permission row.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PermPilot's sample app uses the microphone to demonstrate the Microphone permission row.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>PermPilot's sample app requests location while in use to demonstrate the LocationWhileInUse permission row.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>PermPilot's sample app requests background location to demonstrate the LocationAlways permission row.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>PermPilot's sample app reads contacts to demonstrate the Contacts/WriteContacts permission rows.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>PermPilot's sample app reads calendar events to demonstrate the Calendar permission row.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>PermPilot's sample app reads the photo library to demonstrate the PhotoLibrary permission row.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>PermPilot's sample app scans for Bluetooth devices to demonstrate the BluetoothScan permission row.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>PermPilot's sample app reads motion/activity data to demonstrate the ActivityRecognition permission row.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>PermPilot's sample app requests tracking authorization to demonstrate the AppTrackingTransparency permission row.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>PermPilot's sample app uses speech recognition to demonstrate the SpeechRecognition permission row.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>PermPilot's sample app reads reminders to demonstrate the Reminders permission row.</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>PermPilot's sample app reads the Apple Music library to demonstrate the AudioFiles permission row.</string>
+</dict>
+</plist>
