@@ -66,6 +66,13 @@ class IosPermissionController : PermissionController {
     private var bluetoothContinuation: CancellableContinuation<Unit>? = null
     private val bluetoothDelegate = object : NSObject(), CBCentralManagerDelegateProtocol {
         override fun centralManagerDidUpdateState(central: CBCentralManager) {
+            runOnMain {
+                // Published from the delegate itself, not just the awaiting caller: if that
+                // caller was cancelled while the system alert was up, its resume below is a
+                // no-op, but the StateFlow must still receive the real outcome (same rule as
+                // the Android controller's launcher callback).
+                updateState(Permission.BluetoothScan, mapBluetoothAuthorization(CBManager.authorization))
+            }
             bluetoothContinuation?.let {
                 bluetoothContinuation = null
                 runOnMain { it.resume(Unit) }
@@ -263,6 +270,19 @@ class IosPermissionController : PermissionController {
     }
 
     private fun resumeLocationContinuation() {
+        runOnMain {
+            // Published from the delegate callback itself so a caller cancelled while the system
+            // alert was up can't strand either location StateFlow on a stale value -- the mapping
+            // reads the live authorization status, so both tiers are safe to recompute here.
+            updateState(
+                Permission.LocationWhileInUse,
+                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = false, locationManager.accuracyAuthorization)
+            )
+            updateState(
+                Permission.LocationAlways,
+                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = true, locationManager.accuracyAuthorization)
+            )
+        }
         locationContinuation?.let {
             locationContinuation = null
             runOnMain { it.resume(Unit) }

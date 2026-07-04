@@ -183,7 +183,7 @@ class AndroidPermissionController(
             return current
         }
 
-        if (isMissingFromManifest(manifestPermissions)) {
+        if (isMissingFromManifest(permission.requiredManifestDeclarations())) {
             val error = PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
             updateState(permission, error)
             return error
@@ -228,7 +228,7 @@ class AndroidPermissionController(
         // Undeclared entries are answered locally with ConfigurationError and excluded from the
         // native batch -- bundling one in would make the OS auto-deny it, and its false result
         // would pollute the resolver's view of the whole batch.
-        val undeclared = notGranted.filter { isMissingFromManifest(it.toManifestPermissions()) }
+        val undeclared = notGranted.filter { isMissingFromManifest(it.requiredManifestDeclarations()) }
         val toRequest = notGranted.filterNot { undeclared.contains(it) }
 
         if (toRequest.isNotEmpty() && !hasHostActivity()) {
@@ -440,7 +440,21 @@ class AndroidPermissionController(
         states.getOrPut(permission) { MutableStateFlow(state) }.value = state
     }
 
-    private fun checkState(permission: Permission): PermissionState = when (permission) {
+    private fun checkState(permission: Permission): PermissionState {
+        // Surface a missing <uses-permission> from state() too, not just on request() -- a
+        // PermissionGate (or any observer) then reports the integration mistake immediately on
+        // first composition instead of masquerading as NotDetermined until the first tap. Skipped
+        // when everything needed is already granted (e.g. granted via adb in a test build).
+        if (permission is Permission.Runtime) {
+            val required = permission.requiredManifestDeclarations()
+            if (required.isNotEmpty() && !required.all { isGranted(it) } && isMissingFromManifest(required)) {
+                return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
+            }
+        }
+        return checkStateDispatch(permission)
+    }
+
+    private fun checkStateDispatch(permission: Permission): PermissionState = when (permission) {
         Permission.SystemAlertWindow -> checkSystemAlertWindowState()
         Permission.ExactAlarm -> checkExactAlarmState()
         Permission.IgnoreBatteryOptimizations -> checkIgnoreBatteryOptimizationsState()
@@ -460,63 +474,76 @@ class AndroidPermissionController(
         else -> checkRuntimePermissionState(permission)
     }
 
-    private fun checkSystemAlertWindowState(): PermissionState =
-        if (Settings.canDrawOverlays(context)) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+    // Every Special permission's Settings surface filters on a manifest declaration: the app
+    // simply never appears in the target list (or the request intent is rejected) without it.
+    // Each check below therefore runs granted-first -- a grant that exists anyway (adb, OEM
+    // preload) is still reported truthfully -- then declaration, then the normal denied state.
+    private fun checkSystemAlertWindowState(): PermissionState {
+        if (Settings.canDrawOverlays(context)) return PermissionState.Granted
+        if (isMissingFromManifest(listOf(Manifest.permission.SYSTEM_ALERT_WINDOW))) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
+        return PermissionState.Denied(canRequestAgain = true)
+    }
 
     private fun checkExactAlarmState(): PermissionState {
         if (Build.VERSION.SDK_INT < 31) return PermissionState.Granted
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        return if (alarmManager?.canScheduleExactAlarms() == true) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+        if (alarmManager?.canScheduleExactAlarms() == true) return PermissionState.Granted
+        // Either declaration works: SCHEDULE_EXACT_ALARM (user-revocable) or USE_EXACT_ALARM
+        // (API 33+, alarm-clock category apps, granted unconditionally).
+        val declared = declaredPermissions
+        if (declared != null &&
+            Manifest.permission.SCHEDULE_EXACT_ALARM !in declared &&
+            "android.permission.USE_EXACT_ALARM" !in declared
+        ) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
+        return PermissionState.Denied(canRequestAgain = true)
     }
 
     private fun checkIgnoreBatteryOptimizationsState(): PermissionState {
         val powerManager = context.getSystemService(PowerManager::class.java)
-        return if (powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+        if (powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true) {
+            return PermissionState.Granted
         }
+        // Without this declaration the ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS dialog is
+        // rejected by the system with a SecurityException-shaped no-op.
+        if (isMissingFromManifest(listOf(Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS))) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
+        }
+        return PermissionState.Denied(canRequestAgain = true)
     }
 
-    private fun checkWriteSettingsState(): PermissionState =
-        if (Settings.System.canWrite(context)) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+    private fun checkWriteSettingsState(): PermissionState {
+        if (Settings.System.canWrite(context)) return PermissionState.Granted
+        if (isMissingFromManifest(listOf(Manifest.permission.WRITE_SETTINGS))) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
+        return PermissionState.Denied(canRequestAgain = true)
+    }
 
     private fun checkManageExternalStorageState(): PermissionState {
         // MANAGE_EXTERNAL_STORAGE (the scoped-storage opt-out) didn't exist before Android 11;
         // apps relied on READ/WRITE_EXTERNAL_STORAGE instead, so there's nothing to gate on.
         if (Build.VERSION.SDK_INT < 30) return PermissionState.Granted
-        return if (android.os.Environment.isExternalStorageManager()) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+        if (android.os.Environment.isExternalStorageManager()) return PermissionState.Granted
+        if (isMissingFromManifest(listOf(Manifest.permission.MANAGE_EXTERNAL_STORAGE))) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
+        return PermissionState.Denied(canRequestAgain = true)
     }
 
     private fun checkDoNotDisturbAccessState(): PermissionState {
+        val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+        if (notificationManager?.isNotificationPolicyAccessGranted == true) return PermissionState.Granted
         // The DND-access Settings screen is a list of apps that declare ACCESS_NOTIFICATION_POLICY;
         // without the declaration this app never appears there, so the user has no way to grant it
         // -- that's an integration mistake, not a denial.
         if (isMissingFromManifest(listOf(Manifest.permission.ACCESS_NOTIFICATION_POLICY))) {
             return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
-        val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
-        return if (notificationManager?.isNotificationPolicyAccessGranted == true) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
-        }
+        return PermissionState.Denied(canRequestAgain = true)
     }
 
     @Suppress("DEPRECATION")
@@ -527,11 +554,12 @@ class AndroidPermissionController(
             android.os.Process.myUid(),
             context.packageName
         )
-        return if (mode == android.app.AppOpsManager.MODE_ALLOWED) {
-            PermissionState.Granted
-        } else {
-            PermissionState.Denied(canRequestAgain = true)
+        if (mode == android.app.AppOpsManager.MODE_ALLOWED) return PermissionState.Granted
+        // The usage-access Settings list filters on apps declaring PACKAGE_USAGE_STATS.
+        if (isMissingFromManifest(listOf(Manifest.permission.PACKAGE_USAGE_STATS))) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
+        return PermissionState.Denied(canRequestAgain = true)
     }
 
     private fun checkNotificationListenerAccessState(): PermissionState {

@@ -98,6 +98,26 @@ internal fun Permission.Runtime.toManifestPermissions(): List<String> = when (th
     Permission.AppTrackingTransparency, Permission.SpeechRecognition, Permission.Reminders -> emptyList()
 }
 
+/**
+ * The subset of [toManifestPermissions] that must actually be *declared* for this permission to
+ * be usable at all. Usually identical, but two catalog entries have legitimate, Google-documented
+ * partial-declaration setups that must not be flagged as integration mistakes:
+ * - [Permission.LocationWhileInUse]: declaring only `ACCESS_COARSE_LOCATION` is the documented
+ *   "approximate is enough" configuration -- the bundled FINE request is then auto-denied by the
+ *   OS and the flow correctly resolves `Limited(ApproximateLocationOnly)`.
+ * - [Permission.PhotoLibrary] on API 34+: `READ_MEDIA_VISUAL_USER_SELECTED` only enables the
+ *   partial-selection tier; full grant/deny works without it.
+ */
+internal fun Permission.Runtime.requiredManifestDeclarations(): List<String> = when (this) {
+    Permission.LocationWhileInUse -> listOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+    Permission.PhotoLibrary -> if (Build.VERSION.SDK_INT >= 34) {
+        listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+    } else {
+        toManifestPermissions()
+    }
+    else -> toManifestPermissions()
+}
+
 /** Stable per-permission key for the persisted "has this ever been requested" flag store. */
 internal fun Permission.persistenceKey(): String = this::class.simpleName ?: this.toString()
 

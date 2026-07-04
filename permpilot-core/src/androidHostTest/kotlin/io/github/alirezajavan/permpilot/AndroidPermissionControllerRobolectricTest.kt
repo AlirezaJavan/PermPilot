@@ -369,6 +369,71 @@ class AndroidPermissionControllerRobolectricTest {
         )
     }
 
+    @Test
+    fun `state() surfaces a missing runtime declaration immediately without any request`() {
+        declareManifestPermissions(Manifest.permission.CAMERA)
+        val controller = AndroidPermissionController(context())
+
+        // No request() call at all -- the very first state() read reports the integration mistake.
+        assertEquals(
+            PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration),
+            controller.state(Permission.ReadPhoneState).value
+        )
+    }
+
+    @Test
+    fun `declaring only coarse location is the documented approximate-only setup, not a configuration error`() {
+        declareManifestPermissions(Manifest.permission.ACCESS_COARSE_LOCATION)
+        val controller = AndroidPermissionController(context())
+
+        val state = controller.state(Permission.LocationWhileInUse).value
+        assertTrue(state !is PermissionState.ConfigurationError, "coarse-only declaration must not be flagged, was $state")
+    }
+
+    @Test
+    fun `SystemAlertWindow without its declaration reports ConfigurationError instead of a dead-end Settings redirect`() {
+        ShadowSettings.setCanDrawOverlays(false)
+        declareManifestPermissions(Manifest.permission.CAMERA)
+        val controller = AndroidPermissionController(context())
+
+        assertEquals(
+            PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration),
+            controller.state(Permission.SystemAlertWindow).value
+        )
+    }
+
+    @Test
+    fun `ExactAlarm accepts USE_EXACT_ALARM as an alternative declaration`() {
+        ShadowAlarmManager.setCanScheduleExactAlarms(false)
+        declareManifestPermissions("android.permission.USE_EXACT_ALARM")
+        val controller = AndroidPermissionController(context())
+
+        assertEquals(
+            PermissionState.Denied(canRequestAgain = true),
+            controller.state(Permission.ExactAlarm).value
+        )
+    }
+
+    @Test
+    fun `UsageAccess without PACKAGE_USAGE_STATS declared reports ConfigurationError`() {
+        // Robolectric's AppOps defaults to MODE_ALLOWED; force the realistic not-yet-granted mode
+        // so the declaration check (which only matters pre-grant) is actually reached.
+        val appOps = context().getSystemService(android.app.AppOpsManager::class.java)!!
+        shadowOf(appOps).setMode(
+            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            context().packageName,
+            android.app.AppOpsManager.MODE_IGNORED
+        )
+        declareManifestPermissions(Manifest.permission.CAMERA)
+        val controller = AndroidPermissionController(context())
+
+        assertEquals(
+            PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration),
+            controller.state(Permission.UsageAccess).value
+        )
+    }
+
     // --- Partial grants through the real request path (hard rule #10) -------------------------
 
     @Test
