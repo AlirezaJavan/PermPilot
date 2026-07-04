@@ -1,10 +1,10 @@
 package io.github.alirezajavan.permpilot
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlarmManager
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -63,7 +63,7 @@ class AndroidPermissionController(
                 .getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
                 .requestedPermissions
                 ?.toSet()
-        } catch (e: PackageManager.NameNotFoundException) {
+        } catch (_: PackageManager.NameNotFoundException) {
             null
         }
     }
@@ -131,6 +131,7 @@ class AndroidPermissionController(
         context.startActivity(intent)
     }
 
+    @SuppressLint("BatteryLife")
     override fun openAppSettings(special: Permission.Special) {
         val (action, needsPackageData) = when (special) {
             Permission.SystemAlertWindow -> Settings.ACTION_MANAGE_OVERLAY_PERMISSION to true

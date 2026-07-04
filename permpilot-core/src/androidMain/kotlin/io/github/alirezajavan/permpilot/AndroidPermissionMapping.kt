@@ -1,6 +1,7 @@
 package io.github.alirezajavan.permpilot
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Build
 
 /**
@@ -9,6 +10,7 @@ import android.os.Build
  * Kept separate from [AndroidPermissionController] so the orchestration logic (staging,
  * persistence, coroutine bridging) doesn't get buried under platform-version trivia.
  */
+@SuppressLint("InlinedApi")
 internal fun Permission.Runtime.toManifestPermissions(): List<String> = when (this) {
     Permission.Camera -> listOf(Manifest.permission.CAMERA)
     Permission.Microphone -> listOf(Manifest.permission.RECORD_AUDIO)
@@ -174,6 +176,7 @@ internal fun resolveForegroundLocationGrantResult(
     }
 }
 
+@SuppressLint("InlinedApi")
 internal fun resolvePhotoLibraryGrantResult(
     sdkInt: Int,
     results: Map<String, Boolean>,
