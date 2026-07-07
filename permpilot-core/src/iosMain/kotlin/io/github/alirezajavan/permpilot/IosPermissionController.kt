@@ -7,19 +7,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.coroutines.resume
 import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVMediaTypeAudio
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.authorizationStatusForMediaType
 import platform.AVFoundation.requestAccessForMediaType
 import platform.AppTrackingTransparency.ATTrackingManager
+import platform.Contacts.CNContactStore
+import platform.Contacts.CNEntityType
 import platform.CoreBluetooth.CBCentralManager
 import platform.CoreBluetooth.CBCentralManagerDelegateProtocol
 import platform.CoreBluetooth.CBManager
 import platform.CoreBluetooth.CBManagerAuthorizationNotDetermined
-import platform.Contacts.CNContactStore
-import platform.Contacts.CNEntityType
 import platform.CoreLocation.CLLocationManager
 import platform.CoreLocation.CLLocationManagerDelegateProtocol
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
@@ -46,9 +45,9 @@ import platform.UserNotifications.UNUserNotificationCenter
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
+import kotlin.coroutines.resume
 
 class IosPermissionController : PermissionController {
-
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
 
     // CLLocationManager/CBCentralManager report results through a delegate, not a completion
@@ -56,29 +55,31 @@ class IosPermissionController : PermissionController {
     // state for the lifetime of the request.
     private val locationManager = CLLocationManager()
     private var locationContinuation: CancellableContinuation<Unit>? = null
-    private val locationDelegate = object : NSObject(), CLLocationManagerDelegateProtocol {
-        override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
-            resumeLocationContinuation()
+    private val locationDelegate =
+        object : NSObject(), CLLocationManagerDelegateProtocol {
+            override fun locationManagerDidChangeAuthorization(manager: CLLocationManager) {
+                resumeLocationContinuation()
+            }
         }
-    }
 
     private var bluetoothCentralManager: CBCentralManager? = null
     private var bluetoothContinuation: CancellableContinuation<Unit>? = null
-    private val bluetoothDelegate = object : NSObject(), CBCentralManagerDelegateProtocol {
-        override fun centralManagerDidUpdateState(central: CBCentralManager) {
-            runOnMain {
-                // Published from the delegate itself, not just the awaiting caller: if that
-                // caller was cancelled while the system alert was up, its resume below is a
-                // no-op, but the StateFlow must still receive the real outcome (same rule as
-                // the Android controller's launcher callback).
-                updateState(Permission.BluetoothScan, mapBluetoothAuthorization(CBManager.authorization))
-            }
-            bluetoothContinuation?.let {
-                bluetoothContinuation = null
-                runOnMain { it.resume(Unit) }
+    private val bluetoothDelegate =
+        object : NSObject(), CBCentralManagerDelegateProtocol {
+            override fun centralManagerDidUpdateState(central: CBCentralManager) {
+                runOnMain {
+                    // Published from the delegate itself, not just the awaiting caller: if that
+                    // caller was cancelled while the system alert was up, its resume below is a
+                    // no-op, but the StateFlow must still receive the real outcome (same rule as
+                    // the Android controller's launcher callback).
+                    updateState(Permission.BluetoothScan, mapBluetoothAuthorization(CBManager.authorization))
+                }
+                bluetoothContinuation?.let {
+                    bluetoothContinuation = null
+                    runOnMain { it.resume(Unit) }
+                }
             }
         }
-    }
 
     init {
         locationManager.delegate = locationDelegate
@@ -88,19 +89,21 @@ class IosPermissionController : PermissionController {
     // in-flight request for a CLLocationManager/CBCentralManager-backed permission
     // (LocationWhileInUse, LocationAlways, BluetoothScan) overwrites locationContinuation /
     // bluetoothContinuation before the first call's delegate callback ever fires, so the first
-    // caller's CancellableContinuation is never resumed and hangs forever (PLAN.md §9.1). A Mutex
+    // caller's CancellableContinuation is never resumed and hangs forever (see CLAUDE.md's
+    // concurrency-hardening note). A Mutex
     // is sufficient because iOS can only show one system permission alert at a time regardless.
     private val requestMutex = Mutex()
 
-    override fun state(permission: Permission): StateFlow<PermissionState> {
-        return states.getOrPut(permission) {
-            MutableStateFlow(checkState(permission))
-        }.asStateFlow()
-    }
+    override fun state(permission: Permission): StateFlow<PermissionState> =
+        states
+            .getOrPut(permission) {
+                MutableStateFlow(checkState(permission))
+            }.asStateFlow()
 
-    override suspend fun request(permission: Permission.Runtime): PermissionState = requestMutex.withLock {
-        requestLocked(permission)
-    }
+    override suspend fun request(permission: Permission.Runtime): PermissionState =
+        requestMutex.withLock {
+            requestLocked(permission)
+        }
 
     // Callable only while requestMutex is already held -- requestAll() below needs to drive
     // several of these under a single lock acquisition, and Mutex isn't reentrant.
@@ -111,29 +114,31 @@ class IosPermissionController : PermissionController {
             return error
         }
 
-        val newState = when (permission) {
-            Permission.Camera -> requestAVMediaAccess(AVMediaTypeVideo)
-            Permission.Microphone -> requestAVMediaAccess(AVMediaTypeAudio)
-            Permission.Contacts -> requestContactsAccess()
-            is Permission.Calendar -> requestCalendarAccess(permission.access)
-            Permission.PhotoLibrary -> requestPhotoLibraryAccess()
-            Permission.LocationWhileInUse -> requestForegroundLocation()
-            Permission.LocationAlways -> requestBackgroundLocation()
-            Permission.Notifications -> requestNotificationsAccess()
-            Permission.BluetoothScan -> requestBluetoothAccess()
-            Permission.AppTrackingTransparency -> requestTrackingAuthorization()
-            // Same CNContactStore authorization as Contacts -- iOS doesn't distinguish read/write.
-            Permission.WriteContacts -> requestContactsAccess()
-            Permission.ActivityRecognition -> requestActivityRecognitionAccess()
-            Permission.AudioFiles -> requestAudioFilesAccess()
-            Permission.SpeechRecognition -> requestSpeechRecognitionAccess()
-            Permission.Reminders -> requestRemindersAccess()
-            // Android-only concepts: no iOS equivalent exists, so requesting them is a no-op.
-            Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
-            Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,
-            Permission.ReadCallLog, Permission.WriteCallLog,
-            Permission.SendSms, Permission.ReadSms, Permission.ReceiveSms -> PermissionState.Granted
-        }
+        val newState =
+            when (permission) {
+                Permission.Camera -> requestAVMediaAccess(AVMediaTypeVideo)
+                Permission.Microphone -> requestAVMediaAccess(AVMediaTypeAudio)
+                Permission.Contacts -> requestContactsAccess()
+                is Permission.Calendar -> requestCalendarAccess(permission.access)
+                Permission.PhotoLibrary -> requestPhotoLibraryAccess()
+                Permission.LocationWhileInUse -> requestForegroundLocation()
+                Permission.LocationAlways -> requestBackgroundLocation()
+                Permission.Notifications -> requestNotificationsAccess()
+                Permission.BluetoothScan -> requestBluetoothAccess()
+                Permission.AppTrackingTransparency -> requestTrackingAuthorization()
+                // Same CNContactStore authorization as Contacts -- iOS doesn't distinguish read/write.
+                Permission.WriteContacts -> requestContactsAccess()
+                Permission.ActivityRecognition -> requestActivityRecognitionAccess()
+                Permission.AudioFiles -> requestAudioFilesAccess()
+                Permission.SpeechRecognition -> requestSpeechRecognitionAccess()
+                Permission.Reminders -> requestRemindersAccess()
+                // Android-only concepts: no iOS equivalent exists, so requesting them is a no-op.
+                Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
+                Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,
+                Permission.ReadCallLog, Permission.WriteCallLog,
+                Permission.SendSms, Permission.ReadSms, Permission.ReceiveSms,
+                -> PermissionState.Granted
+            }
         updateState(permission, newState)
         return newState
     }
@@ -276,11 +281,11 @@ class IosPermissionController : PermissionController {
             // reads the live authorization status, so both tiers are safe to recompute here.
             updateState(
                 Permission.LocationWhileInUse,
-                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = false, locationManager.accuracyAuthorization)
+                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = false, locationManager.accuracyAuthorization),
             )
             updateState(
                 Permission.LocationAlways,
-                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = true, locationManager.accuracyAuthorization)
+                mapLocationStatus(locationManager.authorizationStatus, requestedAlways = true, locationManager.accuracyAuthorization),
             )
         }
         locationContinuation?.let {
@@ -420,7 +425,10 @@ class IosPermissionController : PermissionController {
     // getOrPut, not a plain lookup: request() can resolve (including ConfigurationError, for a
     // missing Info.plist key) before state() has ever been called for this permission, in which
     // case `states` has no entry yet -- a plain lookup-and-set would silently drop the result.
-    private fun updateState(permission: Permission, state: PermissionState) {
+    private fun updateState(
+        permission: Permission,
+        state: PermissionState,
+    ) {
         states.getOrPut(permission) { MutableStateFlow(state) }.value = state
     }
 
@@ -431,54 +439,73 @@ class IosPermissionController : PermissionController {
         return checkPermissionState(permission)
     }
 
-    private fun checkPermissionState(permission: Permission): PermissionState = when (permission) {
-        Permission.Camera -> mapAVAuthorizationStatus(
-            AVCaptureDevice.authorizationStatusForMediaType(requireNotNull(AVMediaTypeVideo))
-        )
-        Permission.Microphone -> mapAVAuthorizationStatus(
-            AVCaptureDevice.authorizationStatusForMediaType(requireNotNull(AVMediaTypeAudio))
-        )
-        Permission.Contacts -> mapContactsAuthorizationStatus(
-            CNContactStore.authorizationStatusForEntityType(CNEntityType.CNEntityTypeContacts)
-        )
-        is Permission.Calendar -> mapCalendarAuthorizationStatus(
-            EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeEvent)
-        )
-        Permission.PhotoLibrary -> mapPhotoLibraryStatus(currentPhotoLibraryStatus())
-        Permission.LocationWhileInUse -> mapLocationStatus(locationManager.authorizationStatus, requestedAlways = false, locationManager.accuracyAuthorization)
-        Permission.LocationAlways -> mapLocationStatus(locationManager.authorizationStatus, requestedAlways = true, locationManager.accuracyAuthorization)
-        Permission.Notifications -> {
-            refreshNotificationsState()
-            PermissionState.NotDetermined
+    private fun checkPermissionState(permission: Permission): PermissionState =
+        when (permission) {
+            Permission.Camera ->
+                mapAVAuthorizationStatus(
+                    AVCaptureDevice.authorizationStatusForMediaType(requireNotNull(AVMediaTypeVideo)),
+                )
+            Permission.Microphone ->
+                mapAVAuthorizationStatus(
+                    AVCaptureDevice.authorizationStatusForMediaType(requireNotNull(AVMediaTypeAudio)),
+                )
+            Permission.Contacts ->
+                mapContactsAuthorizationStatus(
+                    CNContactStore.authorizationStatusForEntityType(CNEntityType.CNEntityTypeContacts),
+                )
+            is Permission.Calendar ->
+                mapCalendarAuthorizationStatus(
+                    EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeEvent),
+                )
+            Permission.PhotoLibrary -> mapPhotoLibraryStatus(currentPhotoLibraryStatus())
+            Permission.LocationWhileInUse ->
+                mapLocationStatus(
+                    locationManager.authorizationStatus,
+                    requestedAlways = false,
+                    locationManager.accuracyAuthorization,
+                )
+            Permission.LocationAlways ->
+                mapLocationStatus(
+                    locationManager.authorizationStatus,
+                    requestedAlways = true,
+                    locationManager.accuracyAuthorization,
+                )
+            Permission.Notifications -> {
+                refreshNotificationsState()
+                PermissionState.NotDetermined
+            }
+            Permission.BluetoothScan -> mapBluetoothAuthorization(CBManager.authorization)
+            Permission.AppTrackingTransparency ->
+                if (isAtLeastIOS(14)) {
+                    mapTrackingStatus(ATTrackingManager.trackingAuthorizationStatus)
+                } else {
+                    PermissionState.Granted
+                }
+            // Same CNContactStore authorization as Contacts -- iOS doesn't distinguish read/write.
+            Permission.WriteContacts ->
+                mapContactsAuthorizationStatus(
+                    CNContactStore.authorizationStatusForEntityType(CNEntityType.CNEntityTypeContacts),
+                )
+            Permission.ActivityRecognition -> mapActivityRecognitionStatus(CMMotionActivityManager.authorizationStatus())
+            Permission.AudioFiles -> mapAudioFilesStatus(MPMediaLibrary.authorizationStatus())
+            Permission.SpeechRecognition -> mapSpeechRecognitionStatus(SFSpeechRecognizer.authorizationStatus())
+            Permission.Reminders ->
+                mapCalendarAuthorizationStatus(
+                    EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeReminder),
+                )
+            // Android-only concepts: no iOS equivalent exists, so these are permanently satisfied.
+            Permission.SystemAlertWindow, Permission.ExactAlarm, Permission.IgnoreBatteryOptimizations,
+            Permission.WriteSettings, Permission.ManageExternalStorage,
+            Permission.DoNotDisturbAccess, Permission.UsageAccess, Permission.NotificationListenerAccess,
+            Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
+            Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,
+            Permission.ReadCallLog, Permission.WriteCallLog,
+            Permission.SendSms, Permission.ReadSms, Permission.ReceiveSms,
+            -> PermissionState.Granted
+            // No public API exists to query Local Network access at all; this is a documented
+            // limitation, not a bug -- see docs/permission-matrix.md.
+            Permission.LocalNetwork -> PermissionState.Granted
         }
-        Permission.BluetoothScan -> mapBluetoothAuthorization(CBManager.authorization)
-        Permission.AppTrackingTransparency -> if (isAtLeastIOS(14)) {
-            mapTrackingStatus(ATTrackingManager.trackingAuthorizationStatus)
-        } else {
-            PermissionState.Granted
-        }
-        // Same CNContactStore authorization as Contacts -- iOS doesn't distinguish read/write.
-        Permission.WriteContacts -> mapContactsAuthorizationStatus(
-            CNContactStore.authorizationStatusForEntityType(CNEntityType.CNEntityTypeContacts)
-        )
-        Permission.ActivityRecognition -> mapActivityRecognitionStatus(CMMotionActivityManager.authorizationStatus())
-        Permission.AudioFiles -> mapAudioFilesStatus(MPMediaLibrary.authorizationStatus())
-        Permission.SpeechRecognition -> mapSpeechRecognitionStatus(SFSpeechRecognizer.authorizationStatus())
-        Permission.Reminders -> mapCalendarAuthorizationStatus(
-            EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeReminder)
-        )
-        // Android-only concepts: no iOS equivalent exists, so these are permanently satisfied.
-        Permission.SystemAlertWindow, Permission.ExactAlarm, Permission.IgnoreBatteryOptimizations,
-        Permission.WriteSettings, Permission.ManageExternalStorage,
-        Permission.DoNotDisturbAccess, Permission.UsageAccess, Permission.NotificationListenerAccess,
-        Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
-        Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,
-        Permission.ReadCallLog, Permission.WriteCallLog,
-        Permission.SendSms, Permission.ReadSms, Permission.ReceiveSms -> PermissionState.Granted
-        // No public API exists to query Local Network access at all; this is a documented
-        // limitation, not a bug -- see PLAN.md §6.
-        Permission.LocalNetwork -> PermissionState.Granted
-    }
 
     private fun currentPhotoLibraryStatus(): PHAuthorizationStatus {
         @Suppress("DEPRECATION")

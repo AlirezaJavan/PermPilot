@@ -28,7 +28,6 @@ import kotlin.test.assertTrue
 @Config(sdk = [34])
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryPermissionControllerTest {
-
     // The store's own DB work normally runs on Dispatchers.Default (a real background thread) --
     // tying it to this test's TestScope scheduler instead is what makes advanceUntilIdle() actually
     // wait for it. Without this, `record`/`clear`/`events` race the assertions that follow: it
@@ -43,82 +42,89 @@ class HistoryPermissionControllerTest {
     }
 
     @Test
-    fun `a granted request records Requested then Resolved with the real state`() = runTest {
-        val store = newStore(this)
-        val fake = FakePermissionController().apply { setState(Permission.Camera, PermissionState.Granted) }
-        val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
+    fun `a granted request records Requested then Resolved with the real state`() =
+        runTest {
+            val store = newStore(this)
+            val fake = FakePermissionController().apply { setState(Permission.Camera, PermissionState.Granted) }
+            val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
 
-        controller.request(Permission.Camera)
-        advanceUntilIdle()
+            controller.request(Permission.Camera)
+            advanceUntilIdle()
 
-        val entries = store.events(Permission.Camera).first()
-        // selectForPermission orders newest-first, so entries[1] is the earlier Requested event.
-        assertEquals(2, entries.size)
-        assertEquals(PermissionEventType.Resolved, entries[0].type)
-        assertEquals("Granted", entries[0].state)
-        assertEquals(PermissionEventType.Requested, entries[1].type)
-        assertNull(entries[1].state)
-    }
-
-    @Test
-    fun `requestAll records one Requested and one Resolved event per permission`() = runTest {
-        val store = newStore(this)
-        val fake = FakePermissionController().apply {
-            setState(Permission.Camera, PermissionState.Granted)
-            setState(Permission.Microphone, PermissionState.Denied(canRequestAgain = true))
+            val entries = store.events(Permission.Camera).first()
+            // selectForPermission orders newest-first, so entries[1] is the earlier Requested event.
+            assertEquals(2, entries.size)
+            assertEquals(PermissionEventType.Resolved, entries[0].type)
+            assertEquals("Granted", entries[0].state)
+            assertEquals(PermissionEventType.Requested, entries[1].type)
+            assertNull(entries[1].state)
         }
-        val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
-
-        controller.requestAll(Permission.Camera, Permission.Microphone)
-        advanceUntilIdle()
-
-        assertEquals(2, store.events(Permission.Camera).first().size)
-        assertEquals(2, store.events(Permission.Microphone).first().size)
-    }
 
     @Test
-    fun `openAppSettings for a Special permission records a SettingsOpened event without blocking the call`() = runTest {
-        val store = newStore(this)
-        val fake = FakePermissionController()
-        val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
+    fun `requestAll records one Requested and one Resolved event per permission`() =
+        runTest {
+            val store = newStore(this)
+            val fake =
+                FakePermissionController().apply {
+                    setState(Permission.Camera, PermissionState.Granted)
+                    setState(Permission.Microphone, PermissionState.Denied(canRequestAgain = true))
+                }
+            val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
 
-        // openAppSettings() is not suspend -- the recording happens fire-and-forget on `scope`.
-        controller.openAppSettings(Permission.SystemAlertWindow)
-        advanceUntilIdle()
+            controller.requestAll(Permission.Camera, Permission.Microphone)
+            advanceUntilIdle()
 
-        val entries = store.events(Permission.SystemAlertWindow).first()
-        assertEquals(1, entries.size)
-        assertEquals(PermissionEventType.SettingsOpened, entries[0].type)
-        assertTrue(fake.openAppSettingsCalls.contains(Permission.SystemAlertWindow))
-    }
-
-    @Test
-    fun `plain openAppSettings with no permission records under the generic key, not a crash`() = runTest {
-        val store = newStore(this)
-        val controller = HistoryPermissionController(FakePermissionController(), store, TestScope(testScheduler))
-
-        controller.openAppSettings()
-        advanceUntilIdle()
-
-        val all = store.events().first()
-        assertEquals(1, all.size)
-        assertEquals(GENERIC_PERMISSION_KEY, all[0].permissionKey)
-    }
+            assertEquals(2, store.events(Permission.Camera).first().size)
+            assertEquals(2, store.events(Permission.Microphone).first().size)
+        }
 
     @Test
-    fun `clear removes every recorded event`() = runTest {
-        val store = newStore(this)
-        val controller = HistoryPermissionController(
-            FakePermissionController().apply { setState(Permission.Camera, PermissionState.Granted) },
-            store,
-            TestScope(testScheduler),
-        )
+    fun `openAppSettings for a Special permission records a SettingsOpened event without blocking the call`() =
+        runTest {
+            val store = newStore(this)
+            val fake = FakePermissionController()
+            val controller = HistoryPermissionController(fake, store, TestScope(testScheduler))
 
-        controller.request(Permission.Camera)
-        advanceUntilIdle()
-        assertTrue(store.events().first().isNotEmpty())
+            // openAppSettings() is not suspend -- the recording happens fire-and-forget on `scope`.
+            controller.openAppSettings(Permission.SystemAlertWindow)
+            advanceUntilIdle()
 
-        store.clear()
-        assertTrue(store.events().first().isEmpty())
-    }
+            val entries = store.events(Permission.SystemAlertWindow).first()
+            assertEquals(1, entries.size)
+            assertEquals(PermissionEventType.SettingsOpened, entries[0].type)
+            assertTrue(fake.openAppSettingsCalls.contains(Permission.SystemAlertWindow))
+        }
+
+    @Test
+    fun `plain openAppSettings with no permission records under the generic key, not a crash`() =
+        runTest {
+            val store = newStore(this)
+            val controller = HistoryPermissionController(FakePermissionController(), store, TestScope(testScheduler))
+
+            controller.openAppSettings()
+            advanceUntilIdle()
+
+            val all = store.events().first()
+            assertEquals(1, all.size)
+            assertEquals(GENERIC_PERMISSION_KEY, all[0].permissionKey)
+        }
+
+    @Test
+    fun `clear removes every recorded event`() =
+        runTest {
+            val store = newStore(this)
+            val controller =
+                HistoryPermissionController(
+                    FakePermissionController().apply { setState(Permission.Camera, PermissionState.Granted) },
+                    store,
+                    TestScope(testScheduler),
+                )
+
+            controller.request(Permission.Camera)
+            advanceUntilIdle()
+            assertTrue(store.events().first().isNotEmpty())
+
+            store.clear()
+            assertTrue(store.events().first().isEmpty())
+        }
 }

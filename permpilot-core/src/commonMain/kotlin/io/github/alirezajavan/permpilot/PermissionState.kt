@@ -2,17 +2,28 @@ package io.github.alirezajavan.permpilot
 
 sealed interface PermissionState {
     data object NotDetermined : PermissionState
+
     data object Granted : PermissionState
-    data class Denied(val canRequestAgain: Boolean) : PermissionState
+
+    data class Denied(
+        val canRequestAgain: Boolean,
+    ) : PermissionState
+
     data object PermanentlyDenied : PermissionState
+
     data object Restricted : PermissionState
-    data class Limited(val reason: LimitedReason) : PermissionState
+
+    data class Limited(
+        val reason: LimitedReason,
+    ) : PermissionState
 
     // Not a user permission decision -- a library integration mistake the app developer needs to
     // fix (a missing Info.plist usage-description key, or requesting before any Activity/window is
     // attached). Reported through the same exhaustive `when` as every other state instead of a
     // thrown exception or a silent hang/crash, so callers never need their own try/catch.
-    data class ConfigurationError(val reason: ConfigurationErrorReason) : PermissionState
+    data class ConfigurationError(
+        val reason: ConfigurationErrorReason,
+    ) : PermissionState
 }
 
 enum class LimitedReason {
@@ -26,7 +37,7 @@ enum class LimitedReason {
      * surfaces it as `CLAccuracyAuthorization` being `reducedAccuracy` while the authorization
      * status itself is still authorized (when-in-use or always).
      */
-    ApproximateLocationOnly
+    ApproximateLocationOnly,
 }
 
 enum class ConfigurationErrorReason {
@@ -53,5 +64,5 @@ enum class ConfigurationErrorReason {
      * its Settings list at all, or a declared `NotificationListenerService` for
      * [Permission.NotificationListenerAccess] (its Settings list only shows apps that have one).
      */
-    MissingManifestDeclaration
+    MissingManifestDeclaration,
 }

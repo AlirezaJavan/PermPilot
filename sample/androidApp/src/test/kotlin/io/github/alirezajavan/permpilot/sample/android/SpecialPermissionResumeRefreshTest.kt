@@ -26,7 +26,6 @@ import kotlin.test.assertEquals
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class SpecialPermissionResumeRefreshTest {
-
     @Test
     fun `SystemAlertWindow granted in Settings while away is Granted after returning to the app`() {
         ShadowSettings.setCanDrawOverlays(false)
@@ -40,7 +39,7 @@ class SpecialPermissionResumeRefreshTest {
 
         assertEquals(
             PermissionState.Denied(canRequestAgain = true),
-            controller.state(Permission.SystemAlertWindow).value
+            controller.state(Permission.SystemAlertWindow).value,
         )
 
         // User leaves for the "Display over other apps" Settings screen, grants there, comes back.

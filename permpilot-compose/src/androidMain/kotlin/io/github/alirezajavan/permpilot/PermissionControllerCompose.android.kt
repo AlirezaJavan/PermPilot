@@ -5,7 +5,13 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.collectLatest
 
@@ -22,12 +28,13 @@ actual fun rememberPermissionController(): PermissionController {
 
     var currentMultiCallback by remember { mutableStateOf<((Map<String, Boolean>) -> Unit)?>(null) }
 
-    val multiLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        currentMultiCallback?.invoke(results)
-        currentMultiCallback = null
-    }
+    val multiLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { results ->
+            currentMultiCallback?.invoke(results)
+            currentMultiCallback = null
+        }
 
     LaunchedEffect(controller) {
         controller.multiRequestFlow.collectLatest { request ->
@@ -44,8 +51,9 @@ actual fun rememberPermissionController(): PermissionController {
     return controller
 }
 
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }

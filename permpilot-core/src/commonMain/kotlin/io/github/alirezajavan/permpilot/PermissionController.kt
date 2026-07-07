@@ -4,9 +4,13 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface PermissionController {
     fun state(permission: Permission): StateFlow<PermissionState>
+
     suspend fun request(permission: Permission.Runtime): PermissionState
+
     suspend fun requestAll(vararg permissions: Permission.Runtime): Map<Permission, PermissionState>
+
     fun openAppSettings()
+
     fun openAppSettings(special: Permission.Special)
 
     /**

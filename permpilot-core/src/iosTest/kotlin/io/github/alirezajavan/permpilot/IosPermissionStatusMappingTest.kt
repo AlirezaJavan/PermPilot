@@ -8,14 +8,14 @@ import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusAuth
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusDenied
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusNotDetermined
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusRestricted
-import platform.CoreBluetooth.CBManagerAuthorizationAllowedAlways
-import platform.CoreBluetooth.CBManagerAuthorizationDenied
-import platform.CoreBluetooth.CBManagerAuthorizationNotDetermined
-import platform.CoreBluetooth.CBManagerAuthorizationRestricted
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNAuthorizationStatusDenied
 import platform.Contacts.CNAuthorizationStatusNotDetermined
 import platform.Contacts.CNAuthorizationStatusRestricted
+import platform.CoreBluetooth.CBManagerAuthorizationAllowedAlways
+import platform.CoreBluetooth.CBManagerAuthorizationDenied
+import platform.CoreBluetooth.CBManagerAuthorizationNotDetermined
+import platform.CoreBluetooth.CBManagerAuthorizationRestricted
 import platform.CoreLocation.CLAccuracyAuthorization
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse
@@ -57,7 +57,6 @@ import kotlin.test.assertEquals
  * fail here exactly like it would in the production code).
  */
 class IosPermissionStatusMappingTest {
-
     @Test
     fun `camera and microphone authorization map identically via mapAVAuthorizationStatus`() {
         assertEquals(PermissionState.Granted, mapAVAuthorizationStatus(AVAuthorizationStatusAuthorized))
@@ -87,7 +86,7 @@ class IosPermissionStatusMappingTest {
         assertEquals(PermissionState.Granted, mapPhotoLibraryStatus(PHAuthorizationStatusAuthorized))
         assertEquals(
             PermissionState.Limited(LimitedReason.PartialMediaAccess),
-            mapPhotoLibraryStatus(PHAuthorizationStatusLimited)
+            mapPhotoLibraryStatus(PHAuthorizationStatusLimited),
         )
         assertEquals(PermissionState.NotDetermined, mapPhotoLibraryStatus(PHAuthorizationStatusNotDetermined))
         assertEquals(PermissionState.PermanentlyDenied, mapPhotoLibraryStatus(PHAuthorizationStatusDenied))
@@ -95,25 +94,28 @@ class IosPermissionStatusMappingTest {
     }
 
     // --- Location: authorization tier x accuracy tier, the exact matrix the coarse-location
-    // audit bug lived in (PLAN.md §9.1's Android counterpart; this is the iOS side of that fix).
+    // audit bug lived in (the Android counterpart is in AndroidPermissionResolutionTest; see
+    // CLAUDE.md rule 10 on grouped partial grants -- this is the iOS side of that fix).
 
     @Test
     fun `when-in-use plus full accuracy not upgrading to Always is a plain Granted`() {
-        val state = mapLocationStatus(
-            kCLAuthorizationStatusAuthorizedWhenInUse,
-            requestedAlways = false,
-            CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy
-        )
+        val state =
+            mapLocationStatus(
+                kCLAuthorizationStatusAuthorizedWhenInUse,
+                requestedAlways = false,
+                CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy,
+            )
         assertEquals(PermissionState.Granted, state)
     }
 
     @Test
     fun `when-in-use plus reduced accuracy is Limited ApproximateLocationOnly -- not Granted`() {
-        val state = mapLocationStatus(
-            kCLAuthorizationStatusAuthorizedWhenInUse,
-            requestedAlways = false,
-            CLAccuracyAuthorization.CLAccuracyAuthorizationReducedAccuracy
-        )
+        val state =
+            mapLocationStatus(
+                kCLAuthorizationStatusAuthorizedWhenInUse,
+                requestedAlways = false,
+                CLAccuracyAuthorization.CLAccuracyAuthorizationReducedAccuracy,
+            )
         assertEquals(PermissionState.Limited(LimitedReason.ApproximateLocationOnly), state)
     }
 
@@ -121,31 +123,34 @@ class IosPermissionStatusMappingTest {
     fun `when-in-use while requesting Always is a retryable Denied -- not PermanentlyDenied`() {
         // requestAlwaysAuthorization() is a silent no-op that leaves the user at when-in-use --
         // this must stay retryable (e.g. after more app usage), never look like a hard denial.
-        val state = mapLocationStatus(
-            kCLAuthorizationStatusAuthorizedWhenInUse,
-            requestedAlways = true,
-            CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy
-        )
+        val state =
+            mapLocationStatus(
+                kCLAuthorizationStatusAuthorizedWhenInUse,
+                requestedAlways = true,
+                CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy,
+            )
         assertEquals(PermissionState.Denied(canRequestAgain = true), state)
     }
 
     @Test
     fun `always authorization plus full accuracy is Granted`() {
-        val state = mapLocationStatus(
-            kCLAuthorizationStatusAuthorizedAlways,
-            requestedAlways = true,
-            CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy
-        )
+        val state =
+            mapLocationStatus(
+                kCLAuthorizationStatusAuthorizedAlways,
+                requestedAlways = true,
+                CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy,
+            )
         assertEquals(PermissionState.Granted, state)
     }
 
     @Test
     fun `always authorization plus reduced accuracy is still Limited -- accuracy is independent of tier`() {
-        val state = mapLocationStatus(
-            kCLAuthorizationStatusAuthorizedAlways,
-            requestedAlways = true,
-            CLAccuracyAuthorization.CLAccuracyAuthorizationReducedAccuracy
-        )
+        val state =
+            mapLocationStatus(
+                kCLAuthorizationStatusAuthorizedAlways,
+                requestedAlways = true,
+                CLAccuracyAuthorization.CLAccuracyAuthorizationReducedAccuracy,
+            )
         assertEquals(PermissionState.Limited(LimitedReason.ApproximateLocationOnly), state)
     }
 
@@ -154,15 +159,15 @@ class IosPermissionStatusMappingTest {
         val fullAccuracy = CLAccuracyAuthorization.CLAccuracyAuthorizationFullAccuracy
         assertEquals(
             PermissionState.NotDetermined,
-            mapLocationStatus(kCLAuthorizationStatusNotDetermined, requestedAlways = false, fullAccuracy)
+            mapLocationStatus(kCLAuthorizationStatusNotDetermined, requestedAlways = false, fullAccuracy),
         )
         assertEquals(
             PermissionState.Restricted,
-            mapLocationStatus(kCLAuthorizationStatusRestricted, requestedAlways = true, fullAccuracy)
+            mapLocationStatus(kCLAuthorizationStatusRestricted, requestedAlways = true, fullAccuracy),
         )
         assertEquals(
             PermissionState.PermanentlyDenied,
-            mapLocationStatus(kCLAuthorizationStatusDenied, requestedAlways = false, fullAccuracy)
+            mapLocationStatus(kCLAuthorizationStatusDenied, requestedAlways = false, fullAccuracy),
         )
     }
 
@@ -204,19 +209,19 @@ class IosPermissionStatusMappingTest {
         // flat top-level constants everything else here uses) -- verified by this compiling.
         assertEquals(
             PermissionState.Granted,
-            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusAuthorized)
+            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusAuthorized),
         )
         assertEquals(
             PermissionState.NotDetermined,
-            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusNotDetermined)
+            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusNotDetermined),
         )
         assertEquals(
             PermissionState.PermanentlyDenied,
-            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusDenied)
+            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusDenied),
         )
         assertEquals(
             PermissionState.Restricted,
-            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusRestricted)
+            mapSpeechRecognitionStatus(SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusRestricted),
         )
     }
 

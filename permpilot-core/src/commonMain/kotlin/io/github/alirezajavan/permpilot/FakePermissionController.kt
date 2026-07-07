@@ -18,9 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * a `PermissionGate` observing this fake re-evaluates the same way it would against a device.
  */
 class FakePermissionController(
-    private val initialState: PermissionState = PermissionState.NotDetermined
+    private val initialState: PermissionState = PermissionState.NotDetermined,
 ) : PermissionController {
-
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
 
     /** Every [openAppSettings] invocation in call order; a plain (non-Special) call records `null`. */
@@ -31,7 +30,10 @@ class FakePermissionController(
     val requestCalls: List<Permission.Runtime> get() = _requestCalls
     private val _requestCalls = mutableListOf<Permission.Runtime>()
 
-    fun setState(permission: Permission, state: PermissionState) {
+    fun setState(
+        permission: Permission,
+        state: PermissionState,
+    ) {
         stateFlowFor(permission).value = state
     }
 

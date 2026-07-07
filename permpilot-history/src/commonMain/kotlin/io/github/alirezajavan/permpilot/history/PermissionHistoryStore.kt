@@ -17,9 +17,16 @@ import kotlin.time.ExperimentalTime
 internal const val GENERIC_PERMISSION_KEY = "(generic)"
 
 interface PermissionHistoryStore {
-    suspend fun record(permission: Permission?, type: PermissionEventType, state: PermissionState? = null)
+    suspend fun record(
+        permission: Permission?,
+        type: PermissionEventType,
+        state: PermissionState? = null,
+    )
+
     fun events(): Flow<List<PermissionHistoryEntry>>
+
     fun events(permission: Permission): Flow<List<PermissionHistoryEntry>>
+
     suspend fun clear()
 }
 
@@ -40,10 +47,13 @@ class SqlDelightPermissionHistoryStore(
     driver: SqlDriver,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : PermissionHistoryStore {
-
     private val queries = PermPilotHistoryDatabase(driver).permissionHistoryQueries
 
-    override suspend fun record(permission: Permission?, type: PermissionEventType, state: PermissionState?) {
+    override suspend fun record(
+        permission: Permission?,
+        type: PermissionEventType,
+        state: PermissionState?,
+    ) {
         withContext(dispatcher) {
             queries.insertEvent(
                 permissionKey = permission.toHistoryKey(),
@@ -55,10 +65,18 @@ class SqlDelightPermissionHistoryStore(
     }
 
     override fun events(): Flow<List<PermissionHistoryEntry>> =
-        queries.selectAll(::toEntry).asFlow().mapToList(dispatcher).flowOn(dispatcher)
+        queries
+            .selectAll(::toEntry)
+            .asFlow()
+            .mapToList(dispatcher)
+            .flowOn(dispatcher)
 
     override fun events(permission: Permission): Flow<List<PermissionHistoryEntry>> =
-        queries.selectForPermission(permission.toHistoryKey(), ::toEntry).asFlow().mapToList(dispatcher).flowOn(dispatcher)
+        queries
+            .selectForPermission(permission.toHistoryKey(), ::toEntry)
+            .asFlow()
+            .mapToList(dispatcher)
+            .flowOn(dispatcher)
 
     override suspend fun clear() {
         withContext(dispatcher) {

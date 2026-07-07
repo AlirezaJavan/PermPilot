@@ -15,7 +15,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.russhwolf.settings.SharedPreferencesSettings
-import com.russhwolf.settings.Settings as KeyValueSettings
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,14 +24,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
+import com.russhwolf.settings.Settings as KeyValueSettings
 
 class AndroidPermissionController(
-    private val context: Context
+    private val context: Context,
 ) : PermissionController {
-
-    private val prefs: KeyValueSettings = SharedPreferencesSettings(
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    )
+    private val prefs: KeyValueSettings =
+        SharedPreferencesSettings(
+            context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
+        )
 
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
 
@@ -46,7 +46,8 @@ class AndroidPermissionController(
     // Serializes every request()/requestAll() call through this controller. Without it, two
     // overlapping calls can both tryEmit() into multiRequestFlow's single-slot buffer -- the
     // second tryEmit silently returns false and drops that MultiRequest, leaving its
-    // CancellableContinuation resumed never, hanging that caller forever (PLAN.md §9.1). A Mutex
+    // CancellableContinuation resumed never, hanging that caller forever (see CLAUDE.md's
+    // concurrency-hardening note). A Mutex
     // is sufficient because Android can only show one permission dialog at a time regardless, so
     // there's no real concurrency to preserve here -- just correctness for callers that (wrongly
     // or not) fire two requests close together.
@@ -83,23 +84,25 @@ class AndroidPermissionController(
 
     private fun hasHostActivity(): Boolean = activityRef?.get() != null
 
-    override fun state(permission: Permission): StateFlow<PermissionState> {
-        return states.getOrPut(permission) {
-            MutableStateFlow(checkState(permission))
-        }.asStateFlow()
-    }
+    override fun state(permission: Permission): StateFlow<PermissionState> =
+        states
+            .getOrPut(permission) {
+                MutableStateFlow(checkState(permission))
+            }.asStateFlow()
 
-    override suspend fun request(permission: Permission.Runtime): PermissionState = requestMutex.withLock {
-        requestLocked(permission)
-    }
+    override suspend fun request(permission: Permission.Runtime): PermissionState =
+        requestMutex.withLock {
+            requestLocked(permission)
+        }
 
     // Callable only while requestMutex is already held -- requestAll() below needs to drive
     // several of these under a single lock acquisition, and Mutex isn't reentrant.
-    private suspend fun requestLocked(permission: Permission.Runtime): PermissionState = when (permission) {
-        Permission.LocationAlways -> requestBackgroundLocation()
-        Permission.BodySensorsBackground -> requestBodySensorsBackground()
-        else -> requestRuntimePermission(permission)
-    }
+    private suspend fun requestLocked(permission: Permission.Runtime): PermissionState =
+        when (permission) {
+            Permission.LocationAlways -> requestBackgroundLocation()
+            Permission.BodySensorsBackground -> requestBodySensorsBackground()
+            else -> requestRuntimePermission(permission)
+        }
 
     override suspend fun requestAll(vararg permissions: Permission.Runtime): Map<Permission, PermissionState> =
         requestMutex.withLock {
@@ -124,43 +127,48 @@ class AndroidPermissionController(
         }
 
     override fun openAppSettings() {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", context.packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
 
     @SuppressLint("BatteryLife")
     override fun openAppSettings(special: Permission.Special) {
-        val (action, needsPackageData) = when (special) {
-            Permission.SystemAlertWindow -> Settings.ACTION_MANAGE_OVERLAY_PERMISSION to true
-            Permission.ExactAlarm -> if (Build.VERSION.SDK_INT >= 31) {
-                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM to true
-            } else {
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
+        val (action, needsPackageData) =
+            when (special) {
+                Permission.SystemAlertWindow -> Settings.ACTION_MANAGE_OVERLAY_PERMISSION to true
+                Permission.ExactAlarm ->
+                    if (Build.VERSION.SDK_INT >= 31) {
+                        Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM to true
+                    } else {
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
+                    }
+                Permission.IgnoreBatteryOptimizations -> Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS to true
+                Permission.WriteSettings -> Settings.ACTION_MANAGE_WRITE_SETTINGS to true
+                Permission.ManageExternalStorage ->
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION to true
+                    } else {
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
+                    }
+                // Unlike the five above, these three open a *generic list* of every app requesting
+                // that access -- there is no reliable per-app deep link for them, so no package: data
+                // URI is attached (attaching one is silently ignored by some OEMs, mishandled by others).
+                Permission.DoNotDisturbAccess -> Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS to false
+                Permission.UsageAccess -> Settings.ACTION_USAGE_ACCESS_SETTINGS to false
+                Permission.NotificationListenerAccess -> Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS to false
             }
-            Permission.IgnoreBatteryOptimizations -> Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS to true
-            Permission.WriteSettings -> Settings.ACTION_MANAGE_WRITE_SETTINGS to true
-            Permission.ManageExternalStorage -> if (Build.VERSION.SDK_INT >= 30) {
-                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION to true
-            } else {
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
-            }
-            // Unlike the five above, these three open a *generic list* of every app requesting
-            // that access -- there is no reliable per-app deep link for them, so no package: data
-            // URI is attached (attaching one is silently ignored by some OEMs, mishandled by others).
-            Permission.DoNotDisturbAccess -> Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS to false
-            Permission.UsageAccess -> Settings.ACTION_USAGE_ACCESS_SETTINGS to false
-            Permission.NotificationListenerAccess -> Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS to false
-        }
 
-        val intent = Intent(action).apply {
-            if (needsPackageData) {
-                data = Uri.fromParts("package", context.packageName, null)
+        val intent =
+            Intent(action).apply {
+                if (needsPackageData) {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
         context.startActivity(intent)
     }
 
@@ -203,16 +211,18 @@ class AndroidPermissionController(
         markRequested(permission)
 
         return suspendCancellableCoroutine { continuation ->
-            multiRequestFlow.tryEmit(MultiRequest(manifestPermissions.toTypedArray()) { results ->
-                // State is published from inside the launcher callback, not after the suspend
-                // point: if the awaiting caller was cancelled while the OS dialog was up (e.g. the
-                // composable that launched the request left composition), resume() below becomes a
-                // no-op -- but the StateFlow, and every PermissionGate observing it, must still
-                // receive the real outcome instead of silently staying stale.
-                val newState = resolveState(permission, results, hadRequestedBefore)
-                updateState(permission, newState)
-                continuation.resume(newState)
-            })
+            multiRequestFlow.tryEmit(
+                MultiRequest(manifestPermissions.toTypedArray()) { results ->
+                    // State is published from inside the launcher callback, not after the suspend
+                    // point: if the awaiting caller was cancelled while the OS dialog was up (e.g. the
+                    // composable that launched the request left composition), resume() below becomes a
+                    // no-op -- but the StateFlow, and every PermissionGate observing it, must still
+                    // receive the real outcome instead of silently staying stale.
+                    val newState = resolveState(permission, results, hadRequestedBefore)
+                    updateState(permission, newState)
+                    continuation.resume(newState)
+                },
+            )
         }
     }
 
@@ -245,31 +255,37 @@ class AndroidPermissionController(
 
         val manifestPermissions = toRequest.flatMap { it.toManifestPermissions() }.distinct().toTypedArray()
 
-        val batchResults: Map<Permission, PermissionState> = if (manifestPermissions.isEmpty()) {
-            emptyMap()
-        } else {
-            suspendCancellableCoroutine { continuation ->
-                multiRequestFlow.tryEmit(MultiRequest(manifestPermissions) { results ->
-                    val resultMap = toRequest.associate { p ->
-                        val state = resolveState(p, results, hadRequestedBeforeMap.getValue(p))
-                        updateState(p, state)
-                        (p as Permission) to state
-                    }
-                    continuation.resume(resultMap)
-                })
+        val batchResults: Map<Permission, PermissionState> =
+            if (manifestPermissions.isEmpty()) {
+                emptyMap()
+            } else {
+                suspendCancellableCoroutine { continuation ->
+                    multiRequestFlow.tryEmit(
+                        MultiRequest(manifestPermissions) { results ->
+                            val resultMap =
+                                toRequest.associate { p ->
+                                    val state = resolveState(p, results, hadRequestedBeforeMap.getValue(p))
+                                    updateState(p, state)
+                                    (p as Permission) to state
+                                }
+                            continuation.resume(resultMap)
+                        },
+                    )
+                }
             }
-        }
 
-        val grantedWithoutRequest = (alreadyGranted + notApplicable).associate { p ->
-            updateState(p, PermissionState.Granted)
-            (p as Permission) to PermissionState.Granted
-        }
+        val grantedWithoutRequest =
+            (alreadyGranted + notApplicable).associate { p ->
+                updateState(p, PermissionState.Granted)
+                (p as Permission) to PermissionState.Granted
+            }
 
-        val undeclaredErrors = undeclared.associate { p ->
-            val error = PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
-            updateState(p, error)
-            (p as Permission) to error
-        }
+        val undeclaredErrors =
+            undeclared.associate { p ->
+                val error = PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
+                updateState(p, error)
+                (p as Permission) to error
+            }
 
         return batchResults + grantedWithoutRequest + undeclaredErrors
     }
@@ -315,20 +331,21 @@ class AndroidPermissionController(
         return suspendCancellableCoroutine { continuation ->
             multiRequestFlow.tryEmit(
                 MultiRequest(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) { results ->
-                    val state = if (results[Manifest.permission.ACCESS_BACKGROUND_LOCATION] == true) {
-                        PermissionState.Granted
-                    } else {
-                        resolveDeniedState(
-                            listOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                            hadRequestedBefore
-                        )
-                    }
+                    val state =
+                        if (results[Manifest.permission.ACCESS_BACKGROUND_LOCATION] == true) {
+                            PermissionState.Granted
+                        } else {
+                            resolveDeniedState(
+                                listOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                                hadRequestedBefore,
+                            )
+                        }
                     // Published here rather than after the suspend point so a cancelled caller
                     // can't strand the StateFlow on a stale value (same rule as
                     // requestRuntimePermission).
                     updateState(Permission.LocationAlways, state)
                     continuation.resume(state)
-                }
+                },
             )
         }
     }
@@ -374,19 +391,20 @@ class AndroidPermissionController(
         return suspendCancellableCoroutine { continuation ->
             multiRequestFlow.tryEmit(
                 MultiRequest(arrayOf(Manifest.permission.BODY_SENSORS_BACKGROUND)) { results ->
-                    val state = if (results[Manifest.permission.BODY_SENSORS_BACKGROUND] == true) {
-                        PermissionState.Granted
-                    } else {
-                        resolveDeniedState(
-                            listOf(Manifest.permission.BODY_SENSORS_BACKGROUND),
-                            hadRequestedBefore
-                        )
-                    }
+                    val state =
+                        if (results[Manifest.permission.BODY_SENSORS_BACKGROUND] == true) {
+                            PermissionState.Granted
+                        } else {
+                            resolveDeniedState(
+                                listOf(Manifest.permission.BODY_SENSORS_BACKGROUND),
+                                hadRequestedBefore,
+                            )
+                        }
                     // Same rule as requestRuntimePermission: publish before resuming so a
                     // cancelled caller can't strand the StateFlow on a stale value.
                     updateState(Permission.BodySensorsBackground, state)
                     continuation.resume(state)
-                }
+                },
             )
         }
     }
@@ -394,7 +412,7 @@ class AndroidPermissionController(
     private fun resolveState(
         permission: Permission.Runtime,
         results: Map<String, Boolean>,
-        hadRequestedBefore: Boolean
+        hadRequestedBefore: Boolean,
     ): PermissionState {
         val manifestPermissions = permission.toManifestPermissions()
         val canShowRationale = canShowRationaleFor(manifestPermissions)
@@ -412,14 +430,15 @@ class AndroidPermissionController(
     // resolveDeniedStateFrom (AndroidPermissionMapping.kt) as a pure, directly-testable function.
     private fun canShowRationaleFor(manifestPermissions: List<String>): Boolean {
         val activity = activityRef?.get()
-        return activity != null && manifestPermissions.any { mp ->
-            ActivityCompat.shouldShowRequestPermissionRationale(activity, mp)
-        }
+        return activity != null &&
+            manifestPermissions.any { mp ->
+                ActivityCompat.shouldShowRequestPermissionRationale(activity, mp)
+            }
     }
 
     private fun resolveDeniedState(
         manifestPermissions: List<String>,
-        hadRequestedBefore: Boolean
+        hadRequestedBefore: Boolean,
     ): PermissionState = resolveDeniedStateFrom(canShowRationaleFor(manifestPermissions), hadRequestedBefore)
 
     override fun refreshAll() {
@@ -437,7 +456,10 @@ class AndroidPermissionController(
     // would silently drop the result, and the next state() call would recompute from checkState()
     // instead, losing outcomes checkState() can't re-derive on its own (most notably
     // ConfigurationError, which no live device query can reconstruct after the fact).
-    private fun updateState(permission: Permission, state: PermissionState) {
+    private fun updateState(
+        permission: Permission,
+        state: PermissionState,
+    ) {
         states.getOrPut(permission) { MutableStateFlow(state) }.value = state
     }
 
@@ -455,25 +477,26 @@ class AndroidPermissionController(
         return checkStateDispatch(permission)
     }
 
-    private fun checkStateDispatch(permission: Permission): PermissionState = when (permission) {
-        Permission.SystemAlertWindow -> checkSystemAlertWindowState()
-        Permission.ExactAlarm -> checkExactAlarmState()
-        Permission.IgnoreBatteryOptimizations -> checkIgnoreBatteryOptimizationsState()
-        Permission.WriteSettings -> checkWriteSettingsState()
-        Permission.ManageExternalStorage -> checkManageExternalStorageState()
-        Permission.DoNotDisturbAccess -> checkDoNotDisturbAccessState()
-        Permission.UsageAccess -> checkUsageAccessState()
-        Permission.NotificationListenerAccess -> checkNotificationListenerAccessState()
-        // No Android equivalent exists; AppTrackingTransparency/SpeechRecognition/Reminders also
-        // land here via the generic runtime-permission path below since their manifest-permission
-        // lists are empty.
-        Permission.LocalNetwork -> PermissionState.Granted
-        Permission.PhotoLibrary -> checkPhotoLibraryState()
-        Permission.LocationWhileInUse -> checkLocationWhileInUseState()
-        Permission.LocationAlways -> checkLocationAlwaysState()
-        Permission.BodySensorsBackground -> checkBodySensorsBackgroundState()
-        else -> checkRuntimePermissionState(permission)
-    }
+    private fun checkStateDispatch(permission: Permission): PermissionState =
+        when (permission) {
+            Permission.SystemAlertWindow -> checkSystemAlertWindowState()
+            Permission.ExactAlarm -> checkExactAlarmState()
+            Permission.IgnoreBatteryOptimizations -> checkIgnoreBatteryOptimizationsState()
+            Permission.WriteSettings -> checkWriteSettingsState()
+            Permission.ManageExternalStorage -> checkManageExternalStorageState()
+            Permission.DoNotDisturbAccess -> checkDoNotDisturbAccessState()
+            Permission.UsageAccess -> checkUsageAccessState()
+            Permission.NotificationListenerAccess -> checkNotificationListenerAccessState()
+            // No Android equivalent exists; AppTrackingTransparency/SpeechRecognition/Reminders also
+            // land here via the generic runtime-permission path below since their manifest-permission
+            // lists are empty.
+            Permission.LocalNetwork -> PermissionState.Granted
+            Permission.PhotoLibrary -> checkPhotoLibraryState()
+            Permission.LocationWhileInUse -> checkLocationWhileInUseState()
+            Permission.LocationAlways -> checkLocationAlwaysState()
+            Permission.BodySensorsBackground -> checkBodySensorsBackgroundState()
+            else -> checkRuntimePermissionState(permission)
+        }
 
     // Every Special permission's Settings surface filters on a manifest declaration: the app
     // simply never appears in the target list (or the request intent is rejected) without it.
@@ -550,11 +573,12 @@ class AndroidPermissionController(
     @Suppress("DEPRECATION")
     private fun checkUsageAccessState(): PermissionState {
         val appOps = context.getSystemService(android.app.AppOpsManager::class.java)
-        val mode = appOps?.checkOpNoThrow(
-            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            context.packageName
-        )
+        val mode =
+            appOps?.checkOpNoThrow(
+                android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(),
+                context.packageName,
+            )
         if (mode == android.app.AppOpsManager.MODE_ALLOWED) return PermissionState.Granted
         // The usage-access Settings list filters on apps declaring PACKAGE_USAGE_STATS.
         if (isMissingFromManifest(listOf(Manifest.permission.PACKAGE_USAGE_STATS))) {
@@ -569,8 +593,10 @@ class AndroidPermissionController(
         if (!hasNotificationListenerService()) {
             return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
-        val enabled = NotificationManagerCompat.getEnabledListenerPackages(context)
-            .contains(context.packageName)
+        val enabled =
+            NotificationManagerCompat
+                .getEnabledListenerPackages(context)
+                .contains(context.packageName)
         return if (enabled) {
             PermissionState.Granted
         } else {
@@ -585,7 +611,7 @@ class AndroidPermissionController(
             } else {
                 resolveDeniedState(
                     listOf(Manifest.permission.BODY_SENSORS),
-                    hadRequestedBefore = true
+                    hadRequestedBefore = true,
                 )
             }
         }
@@ -596,13 +622,14 @@ class AndroidPermissionController(
         if (!isRequested(Permission.BodySensorsBackground)) return PermissionState.NotDetermined
         return resolveDeniedState(
             listOf(Manifest.permission.BODY_SENSORS_BACKGROUND),
-            hadRequestedBefore = true
+            hadRequestedBefore = true,
         )
     }
 
     private fun checkLocationAlwaysState(): PermissionState {
-        val foregroundGranted = isGranted(Manifest.permission.ACCESS_FINE_LOCATION) ||
-            isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
+        val foregroundGranted =
+            isGranted(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
 
         if (!foregroundGranted) {
             return if (!isRequested(Permission.LocationWhileInUse)) {
@@ -610,7 +637,7 @@ class AndroidPermissionController(
             } else {
                 resolveDeniedState(
                     listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                    hadRequestedBefore = true
+                    hadRequestedBefore = true,
                 )
             }
         }
@@ -621,7 +648,7 @@ class AndroidPermissionController(
         if (!isRequested(Permission.LocationAlways)) return PermissionState.NotDetermined
         return resolveDeniedState(
             listOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-            hadRequestedBefore = true
+            hadRequestedBefore = true,
         )
     }
 
@@ -632,52 +659,59 @@ class AndroidPermissionController(
             fineGranted -> PermissionState.Granted
             coarseGranted -> PermissionState.Limited(LimitedReason.ApproximateLocationOnly)
             !isRequested(Permission.LocationWhileInUse) -> PermissionState.NotDetermined
-            else -> resolveDeniedState(
-                listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                hadRequestedBefore = true
-            )
+            else ->
+                resolveDeniedState(
+                    listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                    hadRequestedBefore = true,
+                )
         }
     }
 
-    private fun checkPhotoLibraryState(): PermissionState = when {
-        Build.VERSION.SDK_INT >= 34 -> {
-            val fullGranted = isGranted(Manifest.permission.READ_MEDIA_IMAGES) &&
-                isGranted(Manifest.permission.READ_MEDIA_VIDEO)
-            val partialGranted = isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
-            when {
-                fullGranted -> PermissionState.Granted
-                partialGranted -> PermissionState.Limited(LimitedReason.PartialMediaAccess)
-                !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
-                else -> resolveDeniedState(
-                    listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO),
-                    hadRequestedBefore = true
-                )
+    private fun checkPhotoLibraryState(): PermissionState =
+        when {
+            Build.VERSION.SDK_INT >= 34 -> {
+                val fullGranted =
+                    isGranted(Manifest.permission.READ_MEDIA_IMAGES) &&
+                        isGranted(Manifest.permission.READ_MEDIA_VIDEO)
+                val partialGranted = isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                when {
+                    fullGranted -> PermissionState.Granted
+                    partialGranted -> PermissionState.Limited(LimitedReason.PartialMediaAccess)
+                    !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
+                    else ->
+                        resolveDeniedState(
+                            listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO),
+                            hadRequestedBefore = true,
+                        )
+                }
+            }
+            Build.VERSION.SDK_INT == 33 -> {
+                val granted =
+                    isGranted(Manifest.permission.READ_MEDIA_IMAGES) &&
+                        isGranted(Manifest.permission.READ_MEDIA_VIDEO)
+                when {
+                    granted -> PermissionState.Granted
+                    !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
+                    else ->
+                        resolveDeniedState(
+                            listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO),
+                            hadRequestedBefore = true,
+                        )
+                }
+            }
+            else -> {
+                val granted = isGranted(Manifest.permission.READ_EXTERNAL_STORAGE)
+                when {
+                    granted -> PermissionState.Granted
+                    !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
+                    else ->
+                        resolveDeniedState(
+                            listOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                            hadRequestedBefore = true,
+                        )
+                }
             }
         }
-        Build.VERSION.SDK_INT == 33 -> {
-            val granted = isGranted(Manifest.permission.READ_MEDIA_IMAGES) &&
-                isGranted(Manifest.permission.READ_MEDIA_VIDEO)
-            when {
-                granted -> PermissionState.Granted
-                !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
-                else -> resolveDeniedState(
-                    listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO),
-                    hadRequestedBefore = true
-                )
-            }
-        }
-        else -> {
-            val granted = isGranted(Manifest.permission.READ_EXTERNAL_STORAGE)
-            when {
-                granted -> PermissionState.Granted
-                !isRequested(Permission.PhotoLibrary) -> PermissionState.NotDetermined
-                else -> resolveDeniedState(
-                    listOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    hadRequestedBefore = true
-                )
-            }
-        }
-    }
 
     private fun checkRuntimePermissionState(permission: Permission): PermissionState {
         val manifestPermissions = (permission as? Permission.Runtime)?.toManifestPermissions() ?: return PermissionState.Granted
@@ -691,16 +725,16 @@ class AndroidPermissionController(
     }
 
     private fun hasNotificationListenerService(): Boolean {
-        val intent = Intent("android.service.notification.NotificationListenerService")
-            .setPackage(context.packageName)
+        val intent =
+            Intent("android.service.notification.NotificationListenerService")
+                .setPackage(context.packageName)
         return context.packageManager.queryIntentServices(intent, 0).isNotEmpty()
     }
 
     private fun isGranted(manifestPermission: String): Boolean =
         ContextCompat.checkSelfPermission(context, manifestPermission) == PackageManager.PERMISSION_GRANTED
 
-    private fun isRequested(permission: Permission): Boolean =
-        prefs.getBoolean(requestedKey(permission), false)
+    private fun isRequested(permission: Permission): Boolean = prefs.getBoolean(requestedKey(permission), false)
 
     private fun markRequested(permission: Permission) {
         prefs.putBoolean(requestedKey(permission), true)
@@ -715,5 +749,5 @@ class AndroidPermissionController(
 
 class MultiRequest(
     val permissions: Array<String>,
-    val onResult: (Map<String, Boolean>) -> Unit
+    val onResult: (Map<String, Boolean>) -> Unit,
 )

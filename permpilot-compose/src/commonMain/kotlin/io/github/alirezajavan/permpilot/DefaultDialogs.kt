@@ -43,7 +43,7 @@ fun PermissionRationaleDialog(
             TextButton(onClick = onDismiss) {
                 Text(dismissLabel)
             }
-        }
+        },
     )
 }
 
@@ -52,9 +52,10 @@ fun PermissionRestrictedNotice(
     permission: Permission,
     onDismiss: () -> Unit,
     title: String = "Access Restricted",
-    text: String = "Access to ${permission.defaultLabel()} is restricted by a device policy " +
-        "(such as parental controls or an MDM profile) and can't be changed from " +
-        "within this app or its Settings screen.",
+    text: String =
+        "Access to ${permission.defaultLabel()} is restricted by a device policy " +
+            "(such as parental controls or an MDM profile) and can't be changed from " +
+            "within this app or its Settings screen.",
     confirmLabel: String = "OK",
 ) {
     AlertDialog(
@@ -65,7 +66,7 @@ fun PermissionRestrictedNotice(
             TextButton(onClick = onDismiss) {
                 Text(confirmLabel)
             }
-        }
+        },
     )
 }
 
@@ -88,21 +89,25 @@ fun PermissionConfigurationErrorNotice(
             TextButton(onClick = onDismiss) {
                 Text(confirmLabel)
             }
-        }
+        },
     )
 }
 
-private fun defaultExplanation(permission: Permission, reason: ConfigurationErrorReason): String = when (reason) {
-    ConfigurationErrorReason.NoHostActivity ->
-        "rememberPermissionController() was never composed into an Activity-hosted screen, " +
-            "so there's nowhere to show the system permission dialog."
-    ConfigurationErrorReason.MissingUsageDescription ->
-        "the Info.plist usage-description key(s) for ${permission.defaultLabel()} are missing."
-    ConfigurationErrorReason.MissingManifestDeclaration ->
-        "the AndroidManifest is missing what ${permission.defaultLabel()} needs -- a " +
-            "<uses-permission> declaration (for DoNotDisturbAccess: ACCESS_NOTIFICATION_POLICY), " +
-            "or a declared NotificationListenerService for NotificationListenerAccess."
-}
+private fun defaultExplanation(
+    permission: Permission,
+    reason: ConfigurationErrorReason,
+): String =
+    when (reason) {
+        ConfigurationErrorReason.NoHostActivity ->
+            "rememberPermissionController() was never composed into an Activity-hosted screen, " +
+                "so there's nowhere to show the system permission dialog."
+        ConfigurationErrorReason.MissingUsageDescription ->
+            "the Info.plist usage-description key(s) for ${permission.defaultLabel()} are missing."
+        ConfigurationErrorReason.MissingManifestDeclaration ->
+            "the AndroidManifest is missing what ${permission.defaultLabel()} needs -- a " +
+                "<uses-permission> declaration (for DoNotDisturbAccess: ACCESS_NOTIFICATION_POLICY), " +
+                "or a declared NotificationListenerService for NotificationListenerAccess."
+    }
 
 @Composable
 fun PermissionSettingsDialog(
@@ -127,6 +132,6 @@ fun PermissionSettingsDialog(
             TextButton(onClick = onDismiss) {
                 Text(dismissLabel)
             }
-        }
+        },
     )
 }

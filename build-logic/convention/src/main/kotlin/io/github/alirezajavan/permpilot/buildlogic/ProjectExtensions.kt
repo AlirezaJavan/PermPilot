@@ -8,5 +8,4 @@ import org.gradle.kotlin.dsl.getByType
 val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-fun VersionCatalog.findVersionString(alias: String): String =
-    findVersion(alias).get().toString()
+fun VersionCatalog.findVersionString(alias: String): String = findVersion(alias).get().toString()

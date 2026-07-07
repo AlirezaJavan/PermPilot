@@ -2,24 +2,39 @@ package io.github.alirezajavan.permpilot
 
 sealed interface Permission {
     sealed interface Runtime : Permission
+
     sealed interface Special : Permission
+
     sealed interface PlatformLimited : Permission
 
     data object Camera : Runtime
+
     data object Microphone : Runtime
+
     data object LocationWhileInUse : Runtime
+
     data object LocationAlways : Runtime
+
     data object Notifications : Runtime
+
     data object Contacts : Runtime
-    data class Calendar(val access: CalendarAccess = CalendarAccess.Full) : Runtime
+
+    data class Calendar(
+        val access: CalendarAccess = CalendarAccess.Full,
+    ) : Runtime
+
     data object PhotoLibrary : Runtime
+
     data object BluetoothScan : Runtime
+
     // Android-only (Wi-Fi Aware / Nearby Connections); the iOS actual is a no-op Granted.
     data object NearbyWifiDevices : Runtime
+
     // Deprecated by Google in favor of granular android.permission.health.* permissions, but still
     // the only option for apps below that API surface; the iOS actual is a no-op Granted since
     // there is no equivalent to this specific Android permission (HealthKit is a different model).
     data object BodySensors : Runtime
+
     // iOS-only, but it belongs in Runtime rather than PlatformLimited: ATTrackingManager has a
     // real one-shot system prompt (requestTrackingAuthorizationWithCompletionHandler), it's just
     // that there's no Android equivalent, so the Android actual is a no-op Granted.
@@ -33,13 +48,21 @@ sealed interface Permission {
     // allows launching the system Messages/Phone apps via URL schemes, ungated by any permission),
     // so all six of these are no-op Granted on the iOS actual.
     data object CallPhone : Runtime
+
     data object ReadPhoneState : Runtime
+
     data object ReadPhoneNumbers : Runtime // API 26+
+
     data object AnswerPhoneCalls : Runtime // API 26+
+
     data object ReadCallLog : Runtime
+
     data object WriteCallLog : Runtime
+
     data object SendSms : Runtime
+
     data object ReadSms : Runtime
+
     data object ReceiveSms : Runtime
 
     // Paired with iOS Core Motion (CMMotionActivityManager) -- a genuine cross-platform permission.
@@ -63,13 +86,20 @@ sealed interface Permission {
     data object Reminders : Runtime
 
     data object SystemAlertWindow : Special
+
     data object ExactAlarm : Special
+
     data object IgnoreBatteryOptimizations : Special
+
     // Android-only Settings-redirect permissions; the iOS actual is a no-op Granted for all five.
     data object WriteSettings : Special
+
     data object ManageExternalStorage : Special
+
     data object DoNotDisturbAccess : Special
+
     data object UsageAccess : Special
+
     data object NotificationListenerAccess : Special
 
     // PlatformLimited is reserved for permissions with genuinely no request API on either
@@ -81,5 +111,5 @@ sealed interface Permission {
 
 enum class CalendarAccess {
     Full,
-    WriteOnly
+    WriteOnly,
 }

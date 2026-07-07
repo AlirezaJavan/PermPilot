@@ -9,7 +9,6 @@ import kotlin.test.assertEquals
  * source set also compiles for the iOS Kotlin/Native test targets.
  */
 class GatePromptResolverTest {
-
     @Test
     fun `NotDetermined shows the rationale prompt`() {
         assertEquals(GatePrompt.Rationale, resolveGatePrompt(PermissionState.NotDetermined, dismissedFor = null))
@@ -24,11 +23,11 @@ class GatePromptResolverTest {
     fun `Limited is a working grant and shows no prompt`() {
         assertEquals(
             GatePrompt.None,
-            resolveGatePrompt(PermissionState.Limited(LimitedReason.ApproximateLocationOnly), dismissedFor = null)
+            resolveGatePrompt(PermissionState.Limited(LimitedReason.ApproximateLocationOnly), dismissedFor = null),
         )
         assertEquals(
             GatePrompt.None,
-            resolveGatePrompt(PermissionState.Limited(LimitedReason.PartialMediaAccess), dismissedFor = null)
+            resolveGatePrompt(PermissionState.Limited(LimitedReason.PartialMediaAccess), dismissedFor = null),
         )
     }
 
@@ -36,7 +35,7 @@ class GatePromptResolverTest {
     fun `Denied with canRequestAgain shows the rationale prompt again`() {
         assertEquals(
             GatePrompt.Rationale,
-            resolveGatePrompt(PermissionState.Denied(canRequestAgain = true), dismissedFor = null)
+            resolveGatePrompt(PermissionState.Denied(canRequestAgain = true), dismissedFor = null),
         )
     }
 
@@ -44,7 +43,7 @@ class GatePromptResolverTest {
     fun `Denied without canRequestAgain falls back to the settings prompt`() {
         assertEquals(
             GatePrompt.Settings,
-            resolveGatePrompt(PermissionState.Denied(canRequestAgain = false), dismissedFor = null)
+            resolveGatePrompt(PermissionState.Denied(canRequestAgain = false), dismissedFor = null),
         )
     }
 
@@ -64,8 +63,8 @@ class GatePromptResolverTest {
             GatePrompt.ConfigurationError(ConfigurationErrorReason.NoHostActivity),
             resolveGatePrompt(
                 PermissionState.ConfigurationError(ConfigurationErrorReason.NoHostActivity),
-                dismissedFor = null
-            )
+                dismissedFor = null,
+            ),
         )
     }
 
@@ -75,7 +74,7 @@ class GatePromptResolverTest {
         assertEquals(GatePrompt.None, resolveGatePrompt(denied, dismissedFor = denied))
         assertEquals(
             GatePrompt.None,
-            resolveGatePrompt(PermissionState.NotDetermined, dismissedFor = PermissionState.NotDetermined)
+            resolveGatePrompt(PermissionState.NotDetermined, dismissedFor = PermissionState.NotDetermined),
         )
     }
 
@@ -87,16 +86,16 @@ class GatePromptResolverTest {
             GatePrompt.Rationale,
             resolveGatePrompt(
                 PermissionState.Denied(canRequestAgain = true),
-                dismissedFor = PermissionState.NotDetermined
-            )
+                dismissedFor = PermissionState.NotDetermined,
+            ),
         )
         // Dismissed while Denied, came back from Settings still PermanentlyDenied -> settings prompt.
         assertEquals(
             GatePrompt.Settings,
             resolveGatePrompt(
                 PermissionState.PermanentlyDenied,
-                dismissedFor = PermissionState.Denied(canRequestAgain = true)
-            )
+                dismissedFor = PermissionState.Denied(canRequestAgain = true),
+            ),
         )
     }
 
@@ -107,8 +106,8 @@ class GatePromptResolverTest {
             GatePrompt.Settings,
             resolveGatePrompt(
                 PermissionState.Denied(canRequestAgain = false),
-                dismissedFor = PermissionState.Denied(canRequestAgain = true)
-            )
+                dismissedFor = PermissionState.Denied(canRequestAgain = true),
+            ),
         )
     }
 }

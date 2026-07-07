@@ -38,8 +38,12 @@ apiValidation {
 mavenPublishing {
     configure(
         com.vanniktech.maven.publish.KotlinMultiplatform(
-            javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGenerateHtml"),
-            sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources(),
+            javadocJar =
+                com.vanniktech.maven.publish.JavadocJar
+                    .Dokka("dokkaGenerateHtml"),
+            sourcesJar =
+                com.vanniktech.maven.publish.SourcesJar
+                    .Sources(),
             androidVariantsToPublish = listOf("release"),
         ),
     )

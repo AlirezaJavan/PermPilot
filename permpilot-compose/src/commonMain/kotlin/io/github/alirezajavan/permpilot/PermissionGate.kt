@@ -62,10 +62,15 @@ fun PermissionGate(
         GatePrompt.None -> Unit
 
         // Priming before the single native prompt attempt costs nothing on Android and is the
-        // only way to explain *why* on iOS, which never gives a second chance (PLAN.md §4.4).
+        // only way to explain *why* on iOS, which never gives a second chance (see CLAUDE.md's
+        // PermissionGate rules).
         GatePrompt.Rationale -> rationale(::request, ::dismiss)
 
-        GatePrompt.Settings -> settingsPrompt({ dismiss(); controller.openAppSettings() }, ::dismiss)
+        GatePrompt.Settings ->
+            settingsPrompt({
+                dismiss()
+                controller.openAppSettings()
+            }, ::dismiss)
 
         // Restricted (MDM/parental controls) is terminal -- nothing in Settings can fix it, so
         // there is no settingsPrompt fallback here, only the dedicated notice.

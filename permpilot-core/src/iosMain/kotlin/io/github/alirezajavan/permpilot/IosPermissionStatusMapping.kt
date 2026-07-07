@@ -12,16 +12,16 @@ import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusAuth
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusDenied
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusNotDetermined
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusRestricted
-import platform.CoreBluetooth.CBManagerAuthorization
-import platform.CoreBluetooth.CBManagerAuthorizationAllowedAlways
-import platform.CoreBluetooth.CBManagerAuthorizationDenied
-import platform.CoreBluetooth.CBManagerAuthorizationNotDetermined
-import platform.CoreBluetooth.CBManagerAuthorizationRestricted
 import platform.Contacts.CNAuthorizationStatus
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNAuthorizationStatusDenied
 import platform.Contacts.CNAuthorizationStatusNotDetermined
 import platform.Contacts.CNAuthorizationStatusRestricted
+import platform.CoreBluetooth.CBManagerAuthorization
+import platform.CoreBluetooth.CBManagerAuthorizationAllowedAlways
+import platform.CoreBluetooth.CBManagerAuthorizationDenied
+import platform.CoreBluetooth.CBManagerAuthorizationNotDetermined
+import platform.CoreBluetooth.CBManagerAuthorizationRestricted
 import platform.CoreLocation.CLAccuracyAuthorization
 import platform.CoreLocation.CLAuthorizationStatus
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
@@ -65,57 +65,63 @@ import platform.UserNotifications.UNAuthorizationStatusProvisional
  * continuations, staging) isn't buried under a wall of `when` blocks over platform enums.
  */
 
-internal fun mapAVAuthorizationStatus(status: AVAuthorizationStatus): PermissionState = when (status) {
-    AVAuthorizationStatusAuthorized -> PermissionState.Granted
-    AVAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    AVAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    AVAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapAVAuthorizationStatus(status: AVAuthorizationStatus): PermissionState =
+    when (status) {
+        AVAuthorizationStatusAuthorized -> PermissionState.Granted
+        AVAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        AVAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        AVAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapContactsAuthorizationStatus(status: CNAuthorizationStatus): PermissionState = when (status) {
-    CNAuthorizationStatusAuthorized -> PermissionState.Granted
-    CNAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    CNAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    CNAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapContactsAuthorizationStatus(status: CNAuthorizationStatus): PermissionState =
+    when (status) {
+        CNAuthorizationStatusAuthorized -> PermissionState.Granted
+        CNAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        CNAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        CNAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapCalendarAuthorizationStatus(status: EKAuthorizationStatus): PermissionState = when (status) {
-    EKAuthorizationStatusAuthorized -> PermissionState.Granted
-    EKAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    EKAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    EKAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.Granted // iOS 17+ EKAuthorizationStatusFullAccess/WriteOnly land here
-}
+internal fun mapCalendarAuthorizationStatus(status: EKAuthorizationStatus): PermissionState =
+    when (status) {
+        EKAuthorizationStatusAuthorized -> PermissionState.Granted
+        EKAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        EKAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        EKAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.Granted // iOS 17+ EKAuthorizationStatusFullAccess/WriteOnly land here
+    }
 
-internal fun mapPhotoLibraryStatus(status: PHAuthorizationStatus): PermissionState = when (status) {
-    PHAuthorizationStatusAuthorized -> PermissionState.Granted
-    PHAuthorizationStatusLimited -> PermissionState.Limited(LimitedReason.PartialMediaAccess)
-    PHAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    PHAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    PHAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapPhotoLibraryStatus(status: PHAuthorizationStatus): PermissionState =
+    when (status) {
+        PHAuthorizationStatusAuthorized -> PermissionState.Granted
+        PHAuthorizationStatusLimited -> PermissionState.Limited(LimitedReason.PartialMediaAccess)
+        PHAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        PHAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        PHAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
 internal fun mapLocationStatus(
     status: CLAuthorizationStatus,
     requestedAlways: Boolean,
     accuracyAuthorization: CLAccuracyAuthorization,
-): PermissionState = when (status) {
-    kCLAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    kCLAuthorizationStatusRestricted -> PermissionState.Restricted
-    kCLAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    kCLAuthorizationStatusAuthorizedAlways -> grantedLocationState(accuracyAuthorization)
-    kCLAuthorizationStatusAuthorizedWhenInUse -> if (requestedAlways) {
-        // Still only foreground access -- the always-upgrade prompt can be retried later
-        // (e.g. after the user has used the app more), it isn't a hard permanent denial.
-        PermissionState.Denied(canRequestAgain = true)
-    } else {
-        grantedLocationState(accuracyAuthorization)
+): PermissionState =
+    when (status) {
+        kCLAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        kCLAuthorizationStatusRestricted -> PermissionState.Restricted
+        kCLAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        kCLAuthorizationStatusAuthorizedAlways -> grantedLocationState(accuracyAuthorization)
+        kCLAuthorizationStatusAuthorizedWhenInUse ->
+            if (requestedAlways) {
+                // Still only foreground access -- the always-upgrade prompt can be retried later
+                // (e.g. after the user has used the app more), it isn't a hard permanent denial.
+                PermissionState.Denied(canRequestAgain = true)
+            } else {
+                grantedLocationState(accuracyAuthorization)
+            }
+        else -> PermissionState.NotDetermined
     }
-    else -> PermissionState.NotDetermined
-}
 
 // iOS 14+ lets the user grant location access at "Approximate" accuracy regardless of
 // authorization tier (when-in-use or always) -- a legitimate, working grant, not a denial or a
@@ -127,60 +133,70 @@ private fun grantedLocationState(accuracyAuthorization: CLAccuracyAuthorization)
         PermissionState.Granted
     }
 
-internal fun mapNotificationStatus(status: UNAuthorizationStatus): PermissionState = when (status) {
-    UNAuthorizationStatusAuthorized -> PermissionState.Granted
-    UNAuthorizationStatusProvisional -> PermissionState.Granted
-    UNAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    UNAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    else -> PermissionState.NotDetermined // e.g.ephemeral (App Clips)
-}
+internal fun mapNotificationStatus(status: UNAuthorizationStatus): PermissionState =
+    when (status) {
+        UNAuthorizationStatusAuthorized -> PermissionState.Granted
+        UNAuthorizationStatusProvisional -> PermissionState.Granted
+        UNAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        UNAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        else -> PermissionState.NotDetermined // e.g.ephemeral (App Clips)
+    }
 
-internal fun mapBluetoothAuthorization(status: CBManagerAuthorization): PermissionState = when (status) {
-    CBManagerAuthorizationAllowedAlways -> PermissionState.Granted
-    CBManagerAuthorizationDenied -> PermissionState.PermanentlyDenied
-    CBManagerAuthorizationRestricted -> PermissionState.Restricted
-    CBManagerAuthorizationNotDetermined -> PermissionState.NotDetermined
-    else -> PermissionState.NotDetermined
-}
+internal fun mapBluetoothAuthorization(status: CBManagerAuthorization): PermissionState =
+    when (status) {
+        CBManagerAuthorizationAllowedAlways -> PermissionState.Granted
+        CBManagerAuthorizationDenied -> PermissionState.PermanentlyDenied
+        CBManagerAuthorizationRestricted -> PermissionState.Restricted
+        CBManagerAuthorizationNotDetermined -> PermissionState.NotDetermined
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapActivityRecognitionStatus(status: CMAuthorizationStatus): PermissionState = when (status) {
-    CMAuthorizationStatusAuthorized -> PermissionState.Granted
-    CMAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    CMAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    CMAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapActivityRecognitionStatus(status: CMAuthorizationStatus): PermissionState =
+    when (status) {
+        CMAuthorizationStatusAuthorized -> PermissionState.Granted
+        CMAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        CMAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        CMAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapAudioFilesStatus(status: MPMediaLibraryAuthorizationStatus): PermissionState = when (status) {
-    MPMediaLibraryAuthorizationStatusAuthorized -> PermissionState.Granted
-    MPMediaLibraryAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    MPMediaLibraryAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    MPMediaLibraryAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapAudioFilesStatus(status: MPMediaLibraryAuthorizationStatus): PermissionState =
+    when (status) {
+        MPMediaLibraryAuthorizationStatusAuthorized -> PermissionState.Granted
+        MPMediaLibraryAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        MPMediaLibraryAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        MPMediaLibraryAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapSpeechRecognitionStatus(status: SFSpeechRecognizerAuthorizationStatus): PermissionState = when (status) {
-    SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusAuthorized -> PermissionState.Granted
-    SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapSpeechRecognitionStatus(status: SFSpeechRecognizerAuthorizationStatus): PermissionState =
+    when (status) {
+        SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusAuthorized -> PermissionState.Granted
+        SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        SFSpeechRecognizerAuthorizationStatus.SFSpeechRecognizerAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
-internal fun mapTrackingStatus(status: ATTrackingManagerAuthorizationStatus): PermissionState = when (status) {
-    ATTrackingManagerAuthorizationStatusAuthorized -> PermissionState.Granted
-    ATTrackingManagerAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
-    ATTrackingManagerAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
-    ATTrackingManagerAuthorizationStatusRestricted -> PermissionState.Restricted
-    else -> PermissionState.NotDetermined
-}
+internal fun mapTrackingStatus(status: ATTrackingManagerAuthorizationStatus): PermissionState =
+    when (status) {
+        ATTrackingManagerAuthorizationStatusAuthorized -> PermissionState.Granted
+        ATTrackingManagerAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
+        ATTrackingManagerAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
+        ATTrackingManagerAuthorizationStatusRestricted -> PermissionState.Restricted
+        else -> PermissionState.NotDetermined
+    }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun isAtLeastIOS(major: Int, minor: Int = 0): Boolean {
-    val version = cValue<NSOperatingSystemVersion> {
-        majorVersion = major.toLong()
-        minorVersion = minor.toLong()
-        patchVersion = 0
-    }
+internal fun isAtLeastIOS(
+    major: Int,
+    minor: Int = 0,
+): Boolean {
+    val version =
+        cValue<NSOperatingSystemVersion> {
+            majorVersion = major.toLong()
+            minorVersion = minor.toLong()
+            patchVersion = 0
+        }
     return NSProcessInfo.processInfo.isOperatingSystemAtLeastVersion(version)
 }

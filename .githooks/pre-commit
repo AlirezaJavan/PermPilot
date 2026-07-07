@@ -4,12 +4,26 @@
 # Enable it once per clone with:
 #   git config core.hooksPath .githooks
 #
-# Runs the fast local feedback loop before every commit: permpilot-core's JVM unit tests
-# (Robolectric + pure resolve-state logic) and a frontend-only iOS type-check (no full klib
-# codegen, so it stays fast). This is deliberately not the full `./gradlew build` -- that's what
-# CI runs on every PR -- so commits stay quick locally.
+# Runs the fast local feedback loop before every commit: Spotless (ktlint) auto-formats and then
+# verifies Kotlin sources, followed by permpilot-core's JVM unit tests (Robolectric + pure
+# resolve-state logic) and a frontend-only iOS type-check (no full klib codegen, so it stays fast).
+# This is deliberately not the full `./gradlew build` -- that's what CI runs on every PR -- so
+# commits stay quick locally.
 
 set -e
+
+echo "[pre-commit] Formatting Kotlin sources (spotlessApply)..."
+./gradlew spotlessApply --quiet
+
+# Re-stage anything spotlessApply just reformatted among the already-staged files, so the commit
+# includes the formatted versions rather than leaving them as unstaged changes.
+staged_files=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -n "$staged_files" ]; then
+    echo "$staged_files" | tr '\n' '\0' | xargs -0 git add --
+fi
+
+echo "[pre-commit] Verifying formatting (spotlessCheck)..."
+./gradlew spotlessCheck --quiet
 
 echo "[pre-commit] Running permpilot-core unit tests..."
 ./gradlew :permpilot-core:testAndroidHostTest --quiet

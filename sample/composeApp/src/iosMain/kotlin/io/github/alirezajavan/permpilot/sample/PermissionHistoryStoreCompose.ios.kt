@@ -7,8 +7,7 @@ import io.github.alirezajavan.permpilot.history.PermissionHistoryStore
 import io.github.alirezajavan.permpilot.history.SqlDelightPermissionHistoryStore
 
 @Composable
-actual fun rememberPermissionHistoryStore(): PermissionHistoryStore {
-    return remember {
+actual fun rememberPermissionHistoryStore(): PermissionHistoryStore =
+    remember {
         SqlDelightPermissionHistoryStore(PermissionHistoryDriverFactory().createDriver())
     }
-}

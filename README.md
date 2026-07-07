@@ -390,6 +390,7 @@ Three test source sets in `permpilot-core`, each targeting what's actually testa
 
 - [Permission matrix](docs/permission-matrix.md) -- every catalog entry, its Android manifest permission(s) and API-level gating, iOS `Info.plist` key(s), and platform notes.
 - [iOS Info.plist checklist](docs/ios-info-plist-checklist.md) -- the usage-description keys each permission requires.
+- [Roadmap](docs/ROADMAP.md) -- planned permissions and features to add next, as step-by-step tasks with per-step done markers (built to be picked up and continued by any contributor or AI coding agent).
 
 ## Contributing
 

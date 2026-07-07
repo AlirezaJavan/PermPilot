@@ -16,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -27,60 +27,62 @@ import io.github.alirezajavan.permpilot.Permission
 import io.github.alirezajavan.permpilot.PermissionController
 import io.github.alirezajavan.permpilot.PermissionGate
 import io.github.alirezajavan.permpilot.PermissionState
-import io.github.alirezajavan.permpilot.rememberPermissionController
 import io.github.alirezajavan.permpilot.history.HistoryPermissionController
 import io.github.alirezajavan.permpilot.history.PermissionHistoryEntry
+import io.github.alirezajavan.permpilot.rememberPermissionController
 import kotlinx.coroutines.launch
 
 /**
  * One row per catalog entry so every Runtime permission's full request/rationale/settings/
  * restricted flow gets exercised manually against a real device -- permission dialogs are OS
- * chrome and can't be driven by instrumented tests (PLAN.md §8).
+ * chrome and can't be driven by instrumented tests (see CLAUDE.md: sample/ is a QA harness).
  */
-private val demoPermissions: List<Permission.Runtime> = listOf(
-    Permission.Camera,
-    Permission.Microphone,
-    Permission.LocationWhileInUse,
-    Permission.LocationAlways,
-    Permission.Notifications,
-    Permission.Contacts,
-    Permission.WriteContacts,
-    Permission.Calendar(CalendarAccess.Full),
-    Permission.PhotoLibrary,
-    Permission.AudioFiles,
-    Permission.BluetoothScan,
-    Permission.NearbyWifiDevices,
-    Permission.BodySensors,
-    Permission.BodySensorsBackground,
-    Permission.ActivityRecognition,
-    Permission.CallPhone,
-    Permission.ReadPhoneState,
-    Permission.ReadPhoneNumbers,
-    Permission.AnswerPhoneCalls,
-    Permission.ReadCallLog,
-    Permission.WriteCallLog,
-    Permission.SendSms,
-    Permission.ReadSms,
-    Permission.ReceiveSms,
-    Permission.AppTrackingTransparency,
-    Permission.SpeechRecognition,
-    Permission.Reminders,
-)
+private val demoPermissions: List<Permission.Runtime> =
+    listOf(
+        Permission.Camera,
+        Permission.Microphone,
+        Permission.LocationWhileInUse,
+        Permission.LocationAlways,
+        Permission.Notifications,
+        Permission.Contacts,
+        Permission.WriteContacts,
+        Permission.Calendar(CalendarAccess.Full),
+        Permission.PhotoLibrary,
+        Permission.AudioFiles,
+        Permission.BluetoothScan,
+        Permission.NearbyWifiDevices,
+        Permission.BodySensors,
+        Permission.BodySensorsBackground,
+        Permission.ActivityRecognition,
+        Permission.CallPhone,
+        Permission.ReadPhoneState,
+        Permission.ReadPhoneNumbers,
+        Permission.AnswerPhoneCalls,
+        Permission.ReadCallLog,
+        Permission.WriteCallLog,
+        Permission.SendSms,
+        Permission.ReadSms,
+        Permission.ReceiveSms,
+        Permission.AppTrackingTransparency,
+        Permission.SpeechRecognition,
+        Permission.Reminders,
+    )
 
 /**
  * Special permissions have no native request dialog at all -- there's no PermissionGate for
  * them, just a state() query plus a Settings redirect the consumer triggers directly.
  */
-private val demoSpecialPermissions: List<Permission.Special> = listOf(
-    Permission.SystemAlertWindow,
-    Permission.ExactAlarm,
-    Permission.IgnoreBatteryOptimizations,
-    Permission.WriteSettings,
-    Permission.ManageExternalStorage,
-    Permission.DoNotDisturbAccess,
-    Permission.UsageAccess,
-    Permission.NotificationListenerAccess,
-)
+private val demoSpecialPermissions: List<Permission.Special> =
+    listOf(
+        Permission.SystemAlertWindow,
+        Permission.ExactAlarm,
+        Permission.IgnoreBatteryOptimizations,
+        Permission.WriteSettings,
+        Permission.ManageExternalStorage,
+        Permission.DoNotDisturbAccess,
+        Permission.UsageAccess,
+        Permission.NotificationListenerAccess,
+    )
 
 @Composable
 fun App() {
@@ -92,17 +94,21 @@ fun App() {
             // Decorates the real controller with an audit log -- every row below drives requests
             // through this single wrapped instance so demoPermissions/demoSpecialPermissions all
             // land in the same history feed instead of each row's own untracked controller.
-            val controller = remember(baseController, historyStore) {
-                HistoryPermissionController(baseController, historyStore, scope)
-            }
+            val controller =
+                remember(baseController, historyStore) {
+                    HistoryPermissionController(baseController, historyStore, scope)
+                }
             val historyEntries by historyStore.events().collectAsState(initial = emptyList())
 
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(padding),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
+                contentPadding =
+                    androidx.compose.foundation.layout
+                        .PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
                     HistoryCard(historyEntries, onClear = { scope.launch { historyStore.clear() } })
@@ -119,7 +125,10 @@ fun App() {
 }
 
 @Composable
-private fun HistoryCard(entries: List<PermissionHistoryEntry>, onClear: () -> Unit) {
+private fun HistoryCard(
+    entries: List<PermissionHistoryEntry>,
+    onClear: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Permission history (${entries.size})", style = MaterialTheme.typography.titleMedium)
@@ -127,14 +136,15 @@ private fun HistoryCard(entries: List<PermissionHistoryEntry>, onClear: () -> Un
             // height is what makes nesting a lazy list inside the screen's LazyColumn legal --
             // and keeps the card from pushing every permission row off screen as the log grows.
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 280.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 280.dp),
             ) {
                 items(entries.asReversed()) { entry ->
                     Text(
                         "${entry.permissionKey}: ${entry.type}" + (entry.state?.let { " -> $it" } ?: ""),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -146,40 +156,49 @@ private fun HistoryCard(entries: List<PermissionHistoryEntry>, onClear: () -> Un
 }
 
 @Composable
-private fun SpecialPermissionDemoRow(special: Permission.Special, controller: PermissionController) {
+private fun SpecialPermissionDemoRow(
+    special: Permission.Special,
+    controller: PermissionController,
+) {
     val state by controller.state(special).collectAsState()
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(special::class.simpleName ?: "Unknown", style = MaterialTheme.typography.titleMedium)
             Text("State: $state", style = MaterialTheme.typography.bodyMedium)
             when (state) {
-                PermissionState.Granted -> Text(
-                    "Granted",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                PermissionState.Granted ->
+                    Text(
+                        "Granted",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                 // e.g. MissingManifestDeclaration -- Settings can't fix an integration mistake,
                 // so don't offer a redirect that can only dead-end.
-                is PermissionState.ConfigurationError -> Text(
-                    "Configuration error -- see State above",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                else -> Button(
-                    onClick = { controller.openAppSettings(special) },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text("Open Settings")
-                }
+                is PermissionState.ConfigurationError ->
+                    Text(
+                        "Configuration error -- see State above",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                else ->
+                    Button(
+                        onClick = { controller.openAppSettings(special) },
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("Open Settings")
+                    }
             }
         }
     }
 }
 
 @Composable
-private fun PermissionDemoRow(permission: Permission.Runtime, controller: PermissionController) {
+private fun PermissionDemoRow(
+    permission: Permission.Runtime,
+    controller: PermissionController,
+) {
     var showGate by remember { mutableStateOf(false) }
     val state by controller.state(permission).collectAsState()
     val scope = rememberCoroutineScope()
@@ -195,14 +214,14 @@ private fun PermissionDemoRow(permission: Permission.Runtime, controller: Permis
                 // re-request -- the OS shows its own picker/upgrade dialog, no rationale needed.
                 Button(
                     onClick = { scope.launch { controller.request(permission) } },
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
                 ) {
                     Text("Request full access")
                 }
             } else if (state != PermissionState.Granted && !showGate) {
                 Button(
                     onClick = { showGate = true },
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
                 ) {
                     Text("Grant ${permission.label()}")
                 }
@@ -215,7 +234,7 @@ private fun PermissionDemoRow(permission: Permission.Runtime, controller: Permis
                 PermissionGate(
                     permission = permission,
                     controller = controller,
-                    onDismiss = { showGate = false }
+                    onDismiss = { showGate = false },
                 ) { newState ->
                     // State writes belong in an effect, not composition; keyed on newState so the
                     // gate is retired exactly once, after the grant actually lands.
@@ -232,7 +251,7 @@ private fun PermissionDemoRow(permission: Permission.Runtime, controller: Permis
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
             }
@@ -240,7 +259,8 @@ private fun PermissionDemoRow(permission: Permission.Runtime, controller: Permis
     }
 }
 
-private fun Permission.Runtime.label(): String = when (this) {
-    is Permission.Calendar -> "Calendar (${access})"
-    else -> this::class.simpleName ?: "Unknown"
-}
+private fun Permission.Runtime.label(): String =
+    when (this) {
+        is Permission.Calendar -> "Calendar ($access)"
+        else -> this::class.simpleName ?: "Unknown"
+    }

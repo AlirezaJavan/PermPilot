@@ -3,7 +3,7 @@
 Every entry in PermPilot's `Permission` catalog, what it maps to on each platform, and any behavior worth
 knowing before you use it. This is a consumer-facing reference generated from the current implementation
 (`Permission.kt`, `AndroidPermissionMapping.kt`, `IosInfoPlistRequirements.kt`) — for the *why* behind each
-design decision, see `PLAN.md` §4.2 and §6.
+design decision, see `CLAUDE.md` (the "Hard rules learned the hard way" and per-platform notes).
 
 Legend: **Manifest permission(s)** is what PermPilot adds to the runtime-permission request on Android (you
 still need to declare these in your own `AndroidManifest.xml` — PermPilot cannot inject manifest entries for
@@ -30,7 +30,7 @@ you). **Info.plist key(s)** is what you must add to your own `Info.plist` on iOS
 | `BodySensors` | `BODY_SENSORS` (unconditional, stable since API 23) | *(none)* | Android-only, deprecated by Google in favor of granular `android.permission.health.*`; iOS actual is a no-op `Granted`. |
 | `BodySensorsBackground` | `BODY_SENSORS_BACKGROUND` (API 33+; implied granted below that once foreground is granted) | *(none)* | Staged the same way as `LocationAlways`: foreground `BodySensors` must already be granted. Android-only; iOS actual is a no-op `Granted`. |
 | `ActivityRecognition` | `ACTIVITY_RECOGNITION` (API 29+); falls back to `BODY_SENSORS` below that | `NSMotionUsageDescription` | Paired with iOS Core Motion (`CMMotionActivityManager`) — a genuine cross-platform permission. |
-| `AppTrackingTransparency` | *(none — no-op `Granted`)* | `NSUserTrackingUsageDescription` | iOS-only, but has a **real** one-shot native prompt (`ATTrackingManager`); gated to iOS 14+, no-op `Granted` below that. Deliberately `Runtime`, not `PlatformLimited` — see PLAN.md §4.2. |
+| `AppTrackingTransparency` | *(none — no-op `Granted`)* | `NSUserTrackingUsageDescription` | iOS-only, but has a **real** one-shot native prompt (`ATTrackingManager`); gated to iOS 14+, no-op `Granted` below that. Deliberately `Runtime`, not `PlatformLimited` — see CLAUDE.md ("What NOT to reintroduce"). |
 | `SpeechRecognition` | *(none — no-op `Granted`)* | `NSSpeechRecognitionUsageDescription` | iOS-only (`SFSpeechRecognizer`); Android's on-device `SpeechRecognizer` only needs `Microphone` — request that separately there. |
 | `Reminders` | *(none — no-op `Granted`)* | `NSRemindersUsageDescription` | iOS-only (`EKEventStore` reminders — a distinct authorization from `Calendar`'s, despite sharing the same framework/enum). |
 | `CallPhone` | `CALL_PHONE` | *(none — no-op `Granted`)* | Android-only; no iOS API surface exists at all for telephony/SMS/call-log (Apple only allows launching the system Phone/Messages apps via URL schemes, ungated by any permission). |

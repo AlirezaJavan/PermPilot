@@ -12,8 +12,8 @@ import kotlinx.coroutines.withContext
  * Wraps any [PermissionController] -- the real Android/iOS one, or a [io.github.alirezajavan.permpilot.FakePermissionController]
  * in tests -- recording every request/resolution/settings-open into [store], then delegating the
  * actual work unchanged. Deliberately a decorator rather than a new method on [PermissionController]
- * itself: the core interface is binary-compat-locked (see PLAN.md's binary-compatibility-validator
- * entry) and most consumers don't want an audit log, so this stays fully opt-in in a separate module.
+ * itself: the core interface is binary-compat-locked (see CLAUDE.md's Publishing / apiCheck notes)
+ * and most consumers don't want an audit log, so this stays fully opt-in in a separate module.
  *
  * [scope] is only used to fire-and-forget the [PermissionEventType.SettingsOpened] record, since
  * [PermissionController.openAppSettings] is not itself suspend (it's a fire-and-forget navigation
@@ -24,7 +24,6 @@ class HistoryPermissionController(
     private val store: PermissionHistoryStore,
     private val scope: CoroutineScope,
 ) : PermissionController by delegate {
-
     override suspend fun request(permission: Permission.Runtime): PermissionState {
         store.record(permission, PermissionEventType.Requested)
         return delegate.request(permission).also { state ->

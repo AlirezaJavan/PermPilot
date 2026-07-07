@@ -8,13 +8,22 @@ package io.github.alirezajavan.permpilot
  */
 internal sealed interface GatePrompt {
     data object None : GatePrompt
+
     data object Rationale : GatePrompt
+
     data object Settings : GatePrompt
+
     data object Restricted : GatePrompt
-    data class ConfigurationError(val reason: ConfigurationErrorReason) : GatePrompt
+
+    data class ConfigurationError(
+        val reason: ConfigurationErrorReason,
+    ) : GatePrompt
 }
 
-internal fun resolveGatePrompt(state: PermissionState, dismissedFor: PermissionState?): GatePrompt {
+internal fun resolveGatePrompt(
+    state: PermissionState,
+    dismissedFor: PermissionState?,
+): GatePrompt {
     // A prompt is only ever silenced for the exact state it was dismissed (or acted on) for; any
     // state change re-evaluates from scratch, so the gate never goes silent forever.
     if (dismissedFor == state) return GatePrompt.None

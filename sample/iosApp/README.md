@@ -28,7 +28,7 @@ point to verify on your Mac, not a guaranteed-working recording.
    versions of those three with the ones already checked in here (they wire up
    `composeApp`'s `MainViewController()` and declare every required permission usage-description).
 4. Project settings → General → Minimum Deployments → **iOS 15.0** (matches this repo's primary iOS
-   support target per `PLAN.md`).
+   support target for this repo).
 
 ## 2. Wire up the Kotlin/Native framework (no CocoaPods)
 
@@ -54,7 +54,7 @@ Xcode build that framework as part of every build, without CocoaPods:
 ## 3. Run
 
 Pick an iOS 15+ simulator (or a physical device for `LocalNetwork`/`AppTrackingTransparency`, which
-need real hardware/network per `PLAN.md` §8) and Run (⌘R). You should see the same permission list
+need real hardware/network — see `docs/ROADMAP.md` C4) and Run (⌘R). You should see the same permission list
 as the Android sample, backed by the same `permpilot-core`/`permpilot-compose`/`permpilot-history`
 Kotlin code.
 
