@@ -473,7 +473,6 @@ class AndroidPermissionController(
         }
 
         val healthPermissions = permission.toHealthPermissions().toSet()
-        val hadRequestedBefore = isRequested(permission)
         markRequested(permission)
 
         _events.tryEmit(PermissionEvent.RequestStarted(permission))
@@ -485,7 +484,7 @@ class AndroidPermissionController(
                         if (allGranted) {
                             PermissionState.Granted
                         } else {
-                            resolveDeniedState(healthPermissions.toList(), hadRequestedBefore)
+                            resolveHealthDeniedState()
                         }
                     updateState(permission, newState)
                     _events.tryEmit(PermissionEvent.RequestResult(permission, newState))
@@ -527,12 +526,31 @@ class AndroidPermissionController(
         hadRequestedBefore: Boolean,
     ): PermissionState = resolveDeniedStateFrom(canShowRationaleFor(manifestPermissions), hadRequestedBefore)
 
+    // Health Connect permissions are not standard manifest-declared runtime permissions --
+    // ActivityCompat.shouldShowRequestPermissionRationale() doesn't recognize their permission
+    // strings and always reports false for them, which resolveDeniedState()/resolveDeniedStateFrom()
+    // would misread as "permanently denied" after the very first denial (see CLAUDE.md rule #1's
+    // Denied-vs-PermanentlyDenied ambiguity -- same bug shape, different platform API). Health
+    // Connect has no OS-level "don't ask again": its own permission screen can always be re-shown,
+    // so every denial resolves the same way here.
+    private fun resolveHealthDeniedState(): PermissionState = PermissionState.Denied(canRequestAgain = true)
+
     override fun refreshAll() {
         // toList() snapshots the keys so re-entrant state()/getOrPut calls triggered by the
         // updateState below (there are none today, but future permissions might) can't cause a
         // ConcurrentModificationException while this loop is iterating.
         states.keys.toList().forEach { permission ->
-            updateState(permission, checkState(permission))
+            if (permission is Permission.Health) {
+                // checkHealthState() always returns a synchronous placeholder (see its own comment)
+                // and kicks off the real async check as a side effect -- going through it here would
+                // overwrite an already-Granted value with that placeholder on every single refreshAll()
+                // call (e.g. every ON_RESUME), including the resume right after the Health Connect
+                // permission screen itself just delivered Granted via the request callback. Drive the
+                // async refresh directly instead, matching the iOS Notifications special-case.
+                refreshHealthState(permission, permission.toHealthPermissions().toSet())
+            } else {
+                updateState(permission, checkState(permission))
+            }
         }
     }
 
@@ -713,17 +731,11 @@ class AndroidPermissionController(
             return PermissionState.ConfigurationError(ConfigurationErrorReason.HealthApiUnavailable)
         }
 
-        // We can't synchronously check Health Connect permissions reliably in all cases without
-        // blocking, but the SDK provides a way. For state() which is synchronous, we might have to
-        // assume NotDetermined if not requested, or use a cached value.
-        // However, the controller manages its own StateFlows.
-        // I'll add a check that uses runBlocking or similar if absolutely necessary, but
-        // preferred is to trigger an async refresh.
-
-        // Actually, PermissionController has a way to check:
-        // client.permissionController.getGrantedPermissions() is suspend.
-
-        // I'll trigger an async refresh and return a placeholder if not already in states.
+        // Health Connect only exposes getGrantedPermissions() as a suspend call, so there is no
+        // synchronous read here -- trigger the real async check as a side effect and answer this
+        // call with a placeholder in the meantime. Callers that need the settled value (e.g.
+        // refreshAll()) must call refreshHealthState() directly instead of going through here, or
+        // they'll overwrite an already-correct value with this placeholder (see refreshAll()).
         val healthPermissions = permission.toHealthPermissions().toSet()
         refreshHealthState(permission, healthPermissions)
 
@@ -745,7 +757,7 @@ class AndroidPermissionController(
                 } else if (!isRequested(permission)) {
                     PermissionState.NotDetermined
                 } else {
-                    resolveDeniedState(healthPermissions.toList(), hadRequestedBefore = true)
+                    resolveHealthDeniedState()
                 }
             updateState(permission, newState)
         }

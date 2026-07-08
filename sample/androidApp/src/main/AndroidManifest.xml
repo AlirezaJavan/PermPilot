@@ -112,10 +112,26 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Handles the privacy-policy link Health Connect shows on its permission screen,
+                 pre-Android 14 (APK Health Connect). -->
             <intent-filter>
-                <action android:name="androidx.health.connect.registration.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
+
+        <!-- Android 14+ (platform Health Connect) discovers apps to list under its "Apps" screen,
+             and routes the privacy-policy link, via this alias instead of the intent-filter above;
+             without it the app never appears in Health Connect's app list on API 34+ devices. -->
+        <activity-alias
+            android:name=".HealthConnectPermissionsRationaleActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.health.START_ONBOARDING">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Required for Permission.Special.NotificationListenerAccess: the Settings list only
              shows apps that declare a NotificationListenerService bound with this permission. -->

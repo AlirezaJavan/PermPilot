@@ -52,10 +52,13 @@ fun PermissionsGate(
     content: @Composable (Map<Permission, PermissionState>) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    // Observe all permission states and combine them.
+    // Observe all permission states and combine them. Seeded from each StateFlow's real current
+    // value (not a hardcoded NotDetermined) -- controller.state(it) is synchronous and already
+    // reflects reality, so an already-granted/denied permission never flashes a bogus Rationale/
+    // Settings prompt for the one frame before the LaunchedEffect below delivers its first value.
     var states by remember(permissions) {
         mutableStateOf<Map<Permission, PermissionState>>(
-            permissions.associateWith { PermissionState.NotDetermined },
+            permissions.associateWith { controller.state(it).value },
         )
     }
 

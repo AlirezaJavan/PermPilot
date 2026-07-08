@@ -36,6 +36,7 @@ import io.github.alirezajavan.permpilot.history.HistoryPermissionController
 import io.github.alirezajavan.permpilot.history.PermissionHistoryEntry
 import io.github.alirezajavan.permpilot.rememberPermissionController
 import io.github.alirezajavan.permpilot.resolveCombinedState
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -210,11 +211,29 @@ private fun PermissionsGateDemoRow(controller: PermissionController) {
     var showGate by remember { mutableStateOf(false) }
     val permissions = remember { listOf(Permission.Camera, Permission.Microphone) }
 
+    // Combined state is tracked independently of `showGate` so the granted outcome persists after
+    // the gate is dismissed -- deriving "already granted" only from the gate's own content (which
+    // stops recomposing once `showGate` flips false) made the demo flash "Combined state: Granted"
+    // for a single frame and then fall back to the "Request both" button, because nothing outside
+    // the gate remembered that the permissions were in fact granted.
+    val states by
+        remember(permissions) {
+            combine(permissions.map { controller.state(it) }) { it.toList() }
+        }.collectAsState(initial = permissions.map { controller.state(it).value })
+    val combined = resolveCombinedState(states)
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("PermissionsGate (Camera + Mic)", style = MaterialTheme.typography.titleMedium)
 
-            if (!showGate) {
+            if (combined == PermissionState.Granted) {
+                Text(
+                    "Combined state: $combined",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            } else if (!showGate) {
                 Button(
                     onClick = { showGate = true },
                     modifier = Modifier.padding(top = 8.dp),
@@ -223,20 +242,14 @@ private fun PermissionsGateDemoRow(controller: PermissionController) {
                 }
             }
 
-            if (showGate) {
+            if (showGate && combined != PermissionState.Granted) {
                 PermissionsGate(
                     permissions = permissions,
                     controller = controller,
                     onDismiss = { showGate = false },
-                ) { states ->
-                    val combined = resolveCombinedState(states.values.toList())
-                    LaunchedEffect(combined) {
-                        if (combined == PermissionState.Granted) {
-                            showGate = false
-                        }
-                    }
+                ) { gateStates ->
                     Text(
-                        "Combined state: $combined",
+                        "Combined state: ${resolveCombinedState(gateStates.values.toList())}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 8.dp),
