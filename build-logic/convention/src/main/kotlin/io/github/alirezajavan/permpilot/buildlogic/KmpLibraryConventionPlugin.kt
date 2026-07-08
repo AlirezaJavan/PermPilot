@@ -28,6 +28,11 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                     // JVM-only unit tests (no emulator/device needed) for pure Android-source-set
                     // logic -- e.g. AndroidPermissionController's resolve-state functions.
                     withHostTest {}
+                    // Without this, Compose Multiplatform's generated composeResources .cvr files
+                    // never get copied into Android assets on this AGP KMP library plugin, and
+                    // stringResource() crashes at runtime with MissingResourceException (JetBrains
+                    // CMP-9547). Classic com.android.library doesn't need this opt-in.
+                    androidResources.enable = true
                 }
 
                 sourceSets.apply {
