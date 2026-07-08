@@ -40,6 +40,9 @@ abstract interface io.github.alirezajavan.permpilot.history/PermissionHistorySto
 final class io.github.alirezajavan.permpilot.history/HistoryPermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot.history/HistoryPermissionController|null[0]
     constructor <init>(io.github.alirezajavan.permpilot/PermissionController, io.github.alirezajavan.permpilot.history/PermissionHistoryStore, kotlinx.coroutines/CoroutineScope) // io.github.alirezajavan.permpilot.history/HistoryPermissionController.<init>|<init>(io.github.alirezajavan.permpilot.PermissionController;io.github.alirezajavan.permpilot.history.PermissionHistoryStore;kotlinx.coroutines.CoroutineScope){}[0]
 
+    final val events // io.github.alirezajavan.permpilot.history/HistoryPermissionController.events|{}events[0]
+        final fun <get-events>(): kotlinx.coroutines.flow/SharedFlow<io.github.alirezajavan.permpilot/PermissionEvent> // io.github.alirezajavan.permpilot.history/HistoryPermissionController.events.<get-events>|<get-events>(){}[0]
+
     final fun openAppSettings() // io.github.alirezajavan.permpilot.history/HistoryPermissionController.openAppSettings|openAppSettings(){}[0]
     final fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot.history/HistoryPermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
     final fun refreshAll() // io.github.alirezajavan.permpilot.history/HistoryPermissionController.refreshAll|refreshAll(){}[0]

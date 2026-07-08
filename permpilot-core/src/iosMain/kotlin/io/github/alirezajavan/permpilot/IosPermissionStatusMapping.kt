@@ -15,6 +15,7 @@ import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusRest
 import platform.Contacts.CNAuthorizationStatus
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNAuthorizationStatusDenied
+import platform.Contacts.CNAuthorizationStatusLimited
 import platform.Contacts.CNAuthorizationStatusNotDetermined
 import platform.Contacts.CNAuthorizationStatusRestricted
 import platform.CoreBluetooth.CBManagerAuthorization
@@ -77,6 +78,7 @@ internal fun mapAVAuthorizationStatus(status: AVAuthorizationStatus): Permission
 internal fun mapContactsAuthorizationStatus(status: CNAuthorizationStatus): PermissionState =
     when (status) {
         CNAuthorizationStatusAuthorized -> PermissionState.Granted
+        CNAuthorizationStatusLimited -> PermissionState.Limited(LimitedReason.SelectedContactsOnly)
         CNAuthorizationStatusNotDetermined -> PermissionState.NotDetermined
         CNAuthorizationStatusDenied -> PermissionState.PermanentlyDenied
         CNAuthorizationStatusRestricted -> PermissionState.Restricted

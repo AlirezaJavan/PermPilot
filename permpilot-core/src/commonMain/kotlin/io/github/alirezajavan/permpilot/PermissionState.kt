@@ -65,4 +65,10 @@ enum class ConfigurationErrorReason {
      * [Permission.NotificationListenerAccess] (its Settings list only shows apps that have one).
      */
     MissingManifestDeclaration,
+
+    /**
+     * The OS-level Health API is not available on this device (e.g. Health Connect is not
+     * installed on Android).
+     */
+    HealthApiUnavailable,
 }

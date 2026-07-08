@@ -1,7 +1,10 @@
 package io.github.alirezajavan.permpilot
 
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
@@ -22,6 +25,9 @@ class FakePermissionController(
 ) : PermissionController {
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
 
+    private val _events = MutableSharedFlow<PermissionEvent>(extraBufferCapacity = 64)
+    override val events: SharedFlow<PermissionEvent> = _events.asSharedFlow()
+
     /** Every [openAppSettings] invocation in call order; a plain (non-Special) call records `null`. */
     val openAppSettingsCalls: List<Permission?> get() = _openAppSettingsCalls
     private val _openAppSettingsCalls = mutableListOf<Permission?>()
@@ -34,14 +40,22 @@ class FakePermissionController(
         permission: Permission,
         state: PermissionState,
     ) {
-        stateFlowFor(permission).value = state
+        val flow = stateFlowFor(permission)
+        val oldState = flow.value
+        flow.value = state
+        if (oldState != state) {
+            _events.tryEmit(PermissionEvent.StateChanged(permission, state))
+        }
     }
 
     override fun state(permission: Permission): StateFlow<PermissionState> = stateFlowFor(permission).asStateFlow()
 
     override suspend fun request(permission: Permission.Runtime): PermissionState {
         _requestCalls += permission
-        return stateFlowFor(permission).value
+        _events.tryEmit(PermissionEvent.RequestStarted(permission))
+        val result = stateFlowFor(permission).value
+        _events.tryEmit(PermissionEvent.RequestResult(permission, result))
+        return result
     }
 
     override suspend fun requestAll(vararg permissions: Permission.Runtime): Map<Permission, PermissionState> =

@@ -27,6 +27,24 @@ sealed interface Permission {
 
     data object BluetoothScan : Runtime
 
+    data object BluetoothConnect : Runtime
+
+    data object BluetoothAdvertise : Runtime
+
+    data class Health(
+        val dataTypes: Set<HealthDataType>,
+        val access: HealthAccess = HealthAccess.Read,
+    ) : Runtime
+
+    /**
+     * Lets an app read the original GPS EXIF location baked into a photo. Distinct from location
+     * permission. Android-only (API 29+); the iOS actual is a no-op Granted (Photos already
+     * exposes location to an authorized app).
+     *
+     * Note: This is only meaningful once photo/media read access is granted.
+     */
+    data object MediaLocation : Runtime
+
     // Android-only (Wi-Fi Aware / Nearby Connections); the iOS actual is a no-op Granted.
     data object NearbyWifiDevices : Runtime
 
@@ -89,6 +107,8 @@ sealed interface Permission {
 
     data object ExactAlarm : Special
 
+    data object FullScreenIntent : Special
+
     data object IgnoreBatteryOptimizations : Special
 
     // Android-only Settings-redirect permissions; the iOS actual is a no-op Granted for all five.
@@ -112,4 +132,20 @@ sealed interface Permission {
 enum class CalendarAccess {
     Full,
     WriteOnly,
+}
+
+enum class HealthDataType {
+    Steps,
+    HeartRate,
+    Sleep,
+    ActiveEnergy,
+    DistanceWalkingRunning,
+    BodyMass,
+    Height,
+}
+
+enum class HealthAccess {
+    Read,
+    Write,
+    ReadWrite,
 }

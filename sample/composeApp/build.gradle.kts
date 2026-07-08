@@ -12,6 +12,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":permpilot-compose"))
             implementation(project(":permpilot-history"))
+            implementation(libs.androidx.lifecycle.viewmodel)
         }
     }
 }

@@ -10,6 +10,7 @@ import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusNotD
 import platform.AppTrackingTransparency.ATTrackingManagerAuthorizationStatusRestricted
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNAuthorizationStatusDenied
+import platform.Contacts.CNAuthorizationStatusLimited
 import platform.Contacts.CNAuthorizationStatusNotDetermined
 import platform.Contacts.CNAuthorizationStatusRestricted
 import platform.CoreBluetooth.CBManagerAuthorizationAllowedAlways
@@ -68,6 +69,10 @@ class IosPermissionStatusMappingTest {
     @Test
     fun `contacts authorization -- a one-shot prompt -- Denied always means PermanentlyDenied`() {
         assertEquals(PermissionState.Granted, mapContactsAuthorizationStatus(CNAuthorizationStatusAuthorized))
+        assertEquals(
+            PermissionState.Limited(LimitedReason.SelectedContactsOnly),
+            mapContactsAuthorizationStatus(CNAuthorizationStatusLimited),
+        )
         assertEquals(PermissionState.NotDetermined, mapContactsAuthorizationStatus(CNAuthorizationStatusNotDetermined))
         assertEquals(PermissionState.PermanentlyDenied, mapContactsAuthorizationStatus(CNAuthorizationStatusDenied))
         assertEquals(PermissionState.Restricted, mapContactsAuthorizationStatus(CNAuthorizationStatusRestricted))

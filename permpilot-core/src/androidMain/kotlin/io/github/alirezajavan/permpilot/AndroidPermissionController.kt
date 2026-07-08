@@ -14,34 +14,56 @@ import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.russhwolf.settings.SharedPreferencesSettings
+import androidx.health.connect.client.HealthConnectClient
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
-import com.russhwolf.settings.Settings as KeyValueSettings
+
+fun PermissionController.Companion.create(
+    context: Context,
+    activityProvider: (() -> Activity?)? = null,
+    scope: CoroutineScope? = null,
+    persistence: PermissionPersistence? = null,
+): PermissionController = AndroidPermissionController(context, activityProvider, scope, persistence)
 
 class AndroidPermissionController(
     private val context: Context,
+    private val activityProvider: (() -> Activity?)? = null,
+    private val scope: CoroutineScope? = null,
+    persistence: PermissionPersistence? = null,
 ) : PermissionController {
-    private val prefs: KeyValueSettings =
-        SharedPreferencesSettings(
-            context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
-        )
+    private val persistence: PermissionPersistence =
+        persistence ?: SharedPreferencesPermissionPersistence(context)
 
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
+
+    private val _events = MutableSharedFlow<PermissionEvent>(extraBufferCapacity = 64)
+    override val events: SharedFlow<PermissionEvent> = _events.asSharedFlow()
+
+    private val healthConnectClient: HealthConnectClient? by lazy {
+        if (HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) {
+            HealthConnectClient.getOrCreate(context)
+        } else {
+            null
+        }
+    }
 
     // shouldShowRequestPermissionRationale is an Activity API; the controller itself is held
     // via applicationContext so it survives Activity recreation, so the current Activity is
     // tracked separately and refreshed by the Compose bridge on every recomposition.
     private var activityRef: WeakReference<Activity>? = null
 
-    val multiRequestFlow = MutableSharedFlow<MultiRequest>(extraBufferCapacity = 1)
+    val multiRequestFlow = MutableSharedFlow<PermissionRequest>(extraBufferCapacity = 1)
 
     // Serializes every request()/requestAll() call through this controller. Without it, two
     // overlapping calls can both tryEmit() into multiRequestFlow's single-slot buffer -- the
@@ -82,7 +104,7 @@ class AndroidPermissionController(
         activityRef = activity?.let { WeakReference(it) }
     }
 
-    private fun hasHostActivity(): Boolean = activityRef?.get() != null
+    private fun hasHostActivity(): Boolean = (activityProvider?.invoke() ?: activityRef?.get()) != null
 
     override fun state(permission: Permission): StateFlow<PermissionState> =
         states
@@ -101,6 +123,7 @@ class AndroidPermissionController(
         when (permission) {
             Permission.LocationAlways -> requestBackgroundLocation()
             Permission.BodySensorsBackground -> requestBodySensorsBackground()
+            is Permission.Health -> requestHealthPermission(permission)
             else -> requestRuntimePermission(permission)
         }
 
@@ -111,7 +134,7 @@ class AndroidPermissionController(
             // already be granted before either can even be asked), so both are always pulled out of
             // the batch and driven through their own staged flow.
             val staged = setOf(Permission.LocationAlways, Permission.BodySensorsBackground)
-            val batchPermissions = permissions.filterNot { it in staged }
+            val batchPermissions = permissions.filterNot { it in staged || it is Permission.Health }
 
             val results = mutableMapOf<Permission, PermissionState>()
             if (batchPermissions.isNotEmpty()) {
@@ -122,6 +145,10 @@ class AndroidPermissionController(
             }
             if (permissions.contains(Permission.BodySensorsBackground)) {
                 results[Permission.BodySensorsBackground] = requestBodySensorsBackground()
+            }
+            // Health permissions are requested separately as they use a different launcher
+            permissions.filterIsInstance<Permission.Health>().forEach { health ->
+                results[health] = requestHealthPermission(health)
             }
             results
         }
@@ -143,6 +170,12 @@ class AndroidPermissionController(
                 Permission.ExactAlarm ->
                     if (Build.VERSION.SDK_INT >= 31) {
                         Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM to true
+                    } else {
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
+                    }
+                Permission.FullScreenIntent ->
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        "android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT" to true
                     } else {
                         Settings.ACTION_APPLICATION_DETAILS_SETTINGS to true
                     }
@@ -210,9 +243,10 @@ class AndroidPermissionController(
         val hadRequestedBefore = isRequested(permission)
         markRequested(permission)
 
+        _events.tryEmit(PermissionEvent.RequestStarted(permission))
         return suspendCancellableCoroutine { continuation ->
             multiRequestFlow.tryEmit(
-                MultiRequest(manifestPermissions.toTypedArray()) { results ->
+                PermissionRequest.Runtime(manifestPermissions.toTypedArray()) { results ->
                     // State is published from inside the launcher callback, not after the suspend
                     // point: if the awaiting caller was cancelled while the OS dialog was up (e.g. the
                     // composable that launched the request left composition), resume() below becomes a
@@ -220,6 +254,7 @@ class AndroidPermissionController(
                     // receive the real outcome instead of silently staying stale.
                     val newState = resolveState(permission, results, hadRequestedBefore)
                     updateState(permission, newState)
+                    _events.tryEmit(PermissionEvent.RequestResult(permission, newState))
                     continuation.resume(newState)
                 },
             )
@@ -251,7 +286,10 @@ class AndroidPermissionController(
         }
 
         val hadRequestedBeforeMap = toRequest.associateWith { isRequested(it) }
-        toRequest.forEach { markRequested(it) }
+        toRequest.forEach {
+            markRequested(it)
+            _events.tryEmit(PermissionEvent.RequestStarted(it))
+        }
 
         val manifestPermissions = toRequest.flatMap { it.toManifestPermissions() }.distinct().toTypedArray()
 
@@ -261,11 +299,12 @@ class AndroidPermissionController(
             } else {
                 suspendCancellableCoroutine { continuation ->
                     multiRequestFlow.tryEmit(
-                        MultiRequest(manifestPermissions) { results ->
+                        PermissionRequest.Runtime(manifestPermissions) { results ->
                             val resultMap =
                                 toRequest.associate { p ->
                                     val state = resolveState(p, results, hadRequestedBeforeMap.getValue(p))
                                     updateState(p, state)
+                                    _events.tryEmit(PermissionEvent.RequestResult(p, state))
                                     (p as Permission) to state
                                 }
                             continuation.resume(resultMap)
@@ -328,9 +367,10 @@ class AndroidPermissionController(
         val hadRequestedBefore = isRequested(Permission.LocationAlways)
         markRequested(Permission.LocationAlways)
 
+        _events.tryEmit(PermissionEvent.RequestStarted(Permission.LocationAlways))
         return suspendCancellableCoroutine { continuation ->
             multiRequestFlow.tryEmit(
-                MultiRequest(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) { results ->
+                PermissionRequest.Runtime(arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) { results ->
                     val state =
                         if (results[Manifest.permission.ACCESS_BACKGROUND_LOCATION] == true) {
                             PermissionState.Granted
@@ -344,6 +384,7 @@ class AndroidPermissionController(
                     // can't strand the StateFlow on a stale value (same rule as
                     // requestRuntimePermission).
                     updateState(Permission.LocationAlways, state)
+                    _events.tryEmit(PermissionEvent.RequestResult(Permission.LocationAlways, state))
                     continuation.resume(state)
                 },
             )
@@ -388,9 +429,10 @@ class AndroidPermissionController(
         val hadRequestedBefore = isRequested(Permission.BodySensorsBackground)
         markRequested(Permission.BodySensorsBackground)
 
+        _events.tryEmit(PermissionEvent.RequestStarted(Permission.BodySensorsBackground))
         return suspendCancellableCoroutine { continuation ->
             multiRequestFlow.tryEmit(
-                MultiRequest(arrayOf(Manifest.permission.BODY_SENSORS_BACKGROUND)) { results ->
+                PermissionRequest.Runtime(arrayOf(Manifest.permission.BODY_SENSORS_BACKGROUND)) { results ->
                     val state =
                         if (results[Manifest.permission.BODY_SENSORS_BACKGROUND] == true) {
                             PermissionState.Granted
@@ -403,7 +445,51 @@ class AndroidPermissionController(
                     // Same rule as requestRuntimePermission: publish before resuming so a
                     // cancelled caller can't strand the StateFlow on a stale value.
                     updateState(Permission.BodySensorsBackground, state)
+                    _events.tryEmit(PermissionEvent.RequestResult(Permission.BodySensorsBackground, state))
                     continuation.resume(state)
+                },
+            )
+        }
+    }
+
+    private suspend fun requestHealthPermission(permission: Permission.Health): PermissionState {
+        val client = healthConnectClient
+        if (client == null) {
+            val error = PermissionState.ConfigurationError(ConfigurationErrorReason.HealthApiUnavailable)
+            updateState(permission, error)
+            return error
+        }
+
+        val current = checkHealthState(permission)
+        if (current == PermissionState.Granted) {
+            updateState(permission, current)
+            return current
+        }
+
+        if (!hasHostActivity()) {
+            val error = PermissionState.ConfigurationError(ConfigurationErrorReason.NoHostActivity)
+            updateState(permission, error)
+            return error
+        }
+
+        val healthPermissions = permission.toHealthPermissions().toSet()
+        val hadRequestedBefore = isRequested(permission)
+        markRequested(permission)
+
+        _events.tryEmit(PermissionEvent.RequestStarted(permission))
+        return suspendCancellableCoroutine { continuation ->
+            multiRequestFlow.tryEmit(
+                PermissionRequest.Health(healthPermissions) { grantedPermissions ->
+                    val allGranted = healthPermissions.all { it in grantedPermissions }
+                    val newState =
+                        if (allGranted) {
+                            PermissionState.Granted
+                        } else {
+                            resolveDeniedState(healthPermissions.toList(), hadRequestedBefore)
+                        }
+                    updateState(permission, newState)
+                    _events.tryEmit(PermissionEvent.RequestResult(permission, newState))
+                    continuation.resume(newState)
                 },
             )
         }
@@ -429,7 +515,7 @@ class AndroidPermissionController(
     // attached; the actual Denied-vs-PermanentlyDenied decision logic lives in
     // resolveDeniedStateFrom (AndroidPermissionMapping.kt) as a pure, directly-testable function.
     private fun canShowRationaleFor(manifestPermissions: List<String>): Boolean {
-        val activity = activityRef?.get()
+        val activity = activityProvider?.invoke() ?: activityRef?.get()
         return activity != null &&
             manifestPermissions.any { mp ->
                 ActivityCompat.shouldShowRequestPermissionRationale(activity, mp)
@@ -460,7 +546,12 @@ class AndroidPermissionController(
         permission: Permission,
         state: PermissionState,
     ) {
-        states.getOrPut(permission) { MutableStateFlow(state) }.value = state
+        val flow = states.getOrPut(permission) { MutableStateFlow(state) }
+        val oldState = flow.value
+        flow.value = state
+        if (oldState != state) {
+            _events.tryEmit(PermissionEvent.StateChanged(permission, state))
+        }
     }
 
     private fun checkState(permission: Permission): PermissionState {
@@ -481,6 +572,7 @@ class AndroidPermissionController(
         when (permission) {
             Permission.SystemAlertWindow -> checkSystemAlertWindowState()
             Permission.ExactAlarm -> checkExactAlarmState()
+            Permission.FullScreenIntent -> checkFullScreenIntentState()
             Permission.IgnoreBatteryOptimizations -> checkIgnoreBatteryOptimizationsState()
             Permission.WriteSettings -> checkWriteSettingsState()
             Permission.ManageExternalStorage -> checkManageExternalStorageState()
@@ -495,6 +587,7 @@ class AndroidPermissionController(
             Permission.LocationWhileInUse -> checkLocationWhileInUseState()
             Permission.LocationAlways -> checkLocationAlwaysState()
             Permission.BodySensorsBackground -> checkBodySensorsBackgroundState()
+            is Permission.Health -> checkHealthState(permission)
             else -> checkRuntimePermissionState(permission)
         }
 
@@ -521,6 +614,16 @@ class AndroidPermissionController(
             Manifest.permission.SCHEDULE_EXACT_ALARM !in declared &&
             "android.permission.USE_EXACT_ALARM" !in declared
         ) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
+        }
+        return PermissionState.Denied(canRequestAgain = true)
+    }
+
+    private fun checkFullScreenIntentState(): PermissionState {
+        if (Build.VERSION.SDK_INT < 34) return PermissionState.Granted
+        val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+        if (notificationManager?.canUseFullScreenIntent() == true) return PermissionState.Granted
+        if (isMissingFromManifest(listOf("android.permission.USE_FULL_SCREEN_INTENT"))) {
             return PermissionState.ConfigurationError(ConfigurationErrorReason.MissingManifestDeclaration)
         }
         return PermissionState.Denied(canRequestAgain = true)
@@ -601,6 +704,50 @@ class AndroidPermissionController(
             PermissionState.Granted
         } else {
             PermissionState.Denied(canRequestAgain = true)
+        }
+    }
+
+    private fun checkHealthState(permission: Permission.Health): PermissionState {
+        val client = healthConnectClient
+        if (client == null) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.HealthApiUnavailable)
+        }
+
+        // We can't synchronously check Health Connect permissions reliably in all cases without
+        // blocking, but the SDK provides a way. For state() which is synchronous, we might have to
+        // assume NotDetermined if not requested, or use a cached value.
+        // However, the controller manages its own StateFlows.
+        // I'll add a check that uses runBlocking or similar if absolutely necessary, but
+        // preferred is to trigger an async refresh.
+
+        // Actually, PermissionController has a way to check:
+        // client.permissionController.getGrantedPermissions() is suspend.
+
+        // I'll trigger an async refresh and return a placeholder if not already in states.
+        val healthPermissions = permission.toHealthPermissions().toSet()
+        refreshHealthState(permission, healthPermissions)
+
+        return if (!isRequested(permission)) PermissionState.NotDetermined else PermissionState.Denied(canRequestAgain = true)
+    }
+
+    private fun refreshHealthState(
+        permission: Permission.Health,
+        healthPermissions: Set<String>,
+    ) {
+        val client = healthConnectClient ?: return
+        val scope = scope ?: return
+        scope.launch {
+            val granted = client.permissionController.getGrantedPermissions()
+            val allGranted = healthPermissions.all { it in granted }
+            val newState =
+                if (allGranted) {
+                    PermissionState.Granted
+                } else if (!isRequested(permission)) {
+                    PermissionState.NotDetermined
+                } else {
+                    resolveDeniedState(healthPermissions.toList(), hadRequestedBefore = true)
+                }
+            updateState(permission, newState)
         }
     }
 
@@ -734,20 +881,21 @@ class AndroidPermissionController(
     private fun isGranted(manifestPermission: String): Boolean =
         ContextCompat.checkSelfPermission(context, manifestPermission) == PackageManager.PERMISSION_GRANTED
 
-    private fun isRequested(permission: Permission): Boolean = prefs.getBoolean(requestedKey(permission), false)
+    private fun isRequested(permission: Permission): Boolean = persistence.isRequested(permission)
 
     private fun markRequested(permission: Permission) {
-        prefs.putBoolean(requestedKey(permission), true)
-    }
-
-    private fun requestedKey(permission: Permission): String = "requested_${permission.persistenceKey()}"
-
-    private companion object {
-        const val PREFS_NAME = "io.github.alirezajavan.permpilot.state"
+        persistence.markRequested(permission)
     }
 }
 
-class MultiRequest(
-    val permissions: Array<String>,
-    val onResult: (Map<String, Boolean>) -> Unit,
-)
+sealed interface PermissionRequest {
+    class Runtime(
+        val permissions: Array<String>,
+        val onResult: (Map<String, Boolean>) -> Unit,
+    ) : PermissionRequest
+
+    class Health(
+        val permissions: Set<String>,
+        val onResult: (Set<String>) -> Unit,
+    ) : PermissionRequest
+}

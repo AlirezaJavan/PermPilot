@@ -4,6 +4,26 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
+import permpilot.permpilot_compose.generated.resources.Res
+import permpilot.permpilot_compose.generated.resources.permpilot_error_confirm
+import permpilot.permpilot_compose.generated.resources.permpilot_error_health_unavailable
+import permpilot.permpilot_compose.generated.resources.permpilot_error_missing_manifest_declaration
+import permpilot.permpilot_compose.generated.resources.permpilot_error_missing_usage_description
+import permpilot.permpilot_compose.generated.resources.permpilot_error_no_host_activity
+import permpilot.permpilot_compose.generated.resources.permpilot_error_text
+import permpilot.permpilot_compose.generated.resources.permpilot_error_title
+import permpilot.permpilot_compose.generated.resources.permpilot_rationale_confirm
+import permpilot.permpilot_compose.generated.resources.permpilot_rationale_dismiss
+import permpilot.permpilot_compose.generated.resources.permpilot_rationale_text
+import permpilot.permpilot_compose.generated.resources.permpilot_rationale_title
+import permpilot.permpilot_compose.generated.resources.permpilot_restricted_confirm
+import permpilot.permpilot_compose.generated.resources.permpilot_restricted_text
+import permpilot.permpilot_compose.generated.resources.permpilot_restricted_title
+import permpilot.permpilot_compose.generated.resources.permpilot_settings_confirm
+import permpilot.permpilot_compose.generated.resources.permpilot_settings_dismiss
+import permpilot.permpilot_compose.generated.resources.permpilot_settings_text
+import permpilot.permpilot_compose.generated.resources.permpilot_settings_title
 
 /**
  * Fallback human-readable name for a permission in the default dialog copy. Only used inside
@@ -25,23 +45,30 @@ fun PermissionRationaleDialog(
     permission: Permission,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Permission Required",
-    text: String = "This app needs access to your ${permission.defaultLabel()} to function correctly.",
-    confirmLabel: String = "Allow",
-    dismissLabel: String = "Deny",
+    title: String? = null,
+    text: String? = null,
+    confirmLabel: String? = null,
+    dismissLabel: String? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(text) },
+        title = { Text(title ?: stringResource(Res.string.permpilot_rationale_title)) },
+        text = {
+            Text(
+                text ?: stringResource(
+                    Res.string.permpilot_rationale_text,
+                    permission.defaultLabel(),
+                ),
+            )
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(confirmLabel)
+                Text(confirmLabel ?: stringResource(Res.string.permpilot_rationale_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(dismissLabel)
+                Text(dismissLabel ?: stringResource(Res.string.permpilot_rationale_dismiss))
             }
         },
     )
@@ -51,20 +78,24 @@ fun PermissionRationaleDialog(
 fun PermissionRestrictedNotice(
     permission: Permission,
     onDismiss: () -> Unit,
-    title: String = "Access Restricted",
-    text: String =
-        "Access to ${permission.defaultLabel()} is restricted by a device policy " +
-            "(such as parental controls or an MDM profile) and can't be changed from " +
-            "within this app or its Settings screen.",
-    confirmLabel: String = "OK",
+    title: String? = null,
+    text: String? = null,
+    confirmLabel: String? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(text) },
+        title = { Text(title ?: stringResource(Res.string.permpilot_restricted_title)) },
+        text = {
+            Text(
+                text ?: stringResource(
+                    Res.string.permpilot_restricted_text,
+                    permission.defaultLabel(),
+                ),
+            )
+        },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(confirmLabel)
+                Text(confirmLabel ?: stringResource(Res.string.permpilot_restricted_confirm))
             }
         },
     )
@@ -75,38 +106,47 @@ fun PermissionConfigurationErrorNotice(
     permission: Permission,
     reason: ConfigurationErrorReason,
     onDismiss: () -> Unit,
-    title: String = "PermPilot configuration error",
-    text: String = "Can't request ${permission.defaultLabel()}: ${defaultExplanation(permission, reason)}",
-    confirmLabel: String = "OK",
+    title: String? = null,
+    text: String? = null,
+    confirmLabel: String? = null,
 ) {
     // This is a developer-facing integration bug, not something an end user can act on -- the
     // default surfaces it loudly rather than pretending it's a normal denial.
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(text) },
+        title = { Text(title ?: stringResource(Res.string.permpilot_error_title)) },
+        text = {
+            val explanation = defaultExplanation(permission, reason)
+            Text(
+                text ?: stringResource(
+                    Res.string.permpilot_error_text,
+                    permission.defaultLabel(),
+                    explanation,
+                ),
+            )
+        },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(confirmLabel)
+                Text(confirmLabel ?: stringResource(Res.string.permpilot_error_confirm))
             }
         },
     )
 }
 
+@Composable
 private fun defaultExplanation(
     permission: Permission,
     reason: ConfigurationErrorReason,
 ): String =
     when (reason) {
         ConfigurationErrorReason.NoHostActivity ->
-            "rememberPermissionController() was never composed into an Activity-hosted screen, " +
-                "so there's nowhere to show the system permission dialog."
+            stringResource(Res.string.permpilot_error_no_host_activity)
         ConfigurationErrorReason.MissingUsageDescription ->
-            "the Info.plist usage-description key(s) for ${permission.defaultLabel()} are missing."
+            stringResource(Res.string.permpilot_error_missing_usage_description, permission.defaultLabel())
         ConfigurationErrorReason.MissingManifestDeclaration ->
-            "the AndroidManifest is missing what ${permission.defaultLabel()} needs -- a " +
-                "<uses-permission> declaration (for DoNotDisturbAccess: ACCESS_NOTIFICATION_POLICY), " +
-                "or a declared NotificationListenerService for NotificationListenerAccess."
+            stringResource(Res.string.permpilot_error_missing_manifest_declaration, permission.defaultLabel())
+        ConfigurationErrorReason.HealthApiUnavailable ->
+            stringResource(Res.string.permpilot_error_health_unavailable)
     }
 
 @Composable
@@ -114,23 +154,30 @@ fun PermissionSettingsDialog(
     permission: Permission,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Permission Denied",
-    text: String = "You have denied ${permission.defaultLabel()} permission. Please enable it in settings.",
-    confirmLabel: String = "Open Settings",
-    dismissLabel: String = "Cancel",
+    title: String? = null,
+    text: String? = null,
+    confirmLabel: String? = null,
+    dismissLabel: String? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(text) },
+        title = { Text(title ?: stringResource(Res.string.permpilot_settings_title)) },
+        text = {
+            Text(
+                text ?: stringResource(
+                    Res.string.permpilot_settings_text,
+                    permission.defaultLabel(),
+                ),
+            )
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(confirmLabel)
+                Text(confirmLabel ?: stringResource(Res.string.permpilot_settings_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(dismissLabel)
+                Text(dismissLabel ?: stringResource(Res.string.permpilot_settings_dismiss))
             }
         },
     )

@@ -3,4 +3,4 @@ package io.github.alirezajavan.permpilot
 import androidx.compose.runtime.Composable
 
 @Composable
-expect fun rememberPermissionController(): PermissionController
+expect fun rememberPermissionController(persistence: PermissionPersistence? = null): PermissionController

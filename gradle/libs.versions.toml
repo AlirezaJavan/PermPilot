@@ -5,6 +5,7 @@ android-minSdk = "24"
 android-targetSdk = "37"
 androidx-activityCompose = "1.13.0"
 androidx-core = "1.19.0"
+androidx-health-connect = "1.1.0"
 androidx-test-core = "1.7.0"
 androidx-lifecycle = "2.10.0"
 binary-compatibility-validator = "0.18.1"
@@ -24,6 +25,7 @@ vanniktech-publish = "0.37.0"
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-health-connect-client = { module = "androidx.health.connect:connect-client", version.ref = "androidx-health-connect" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }

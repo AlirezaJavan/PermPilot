@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
+
     <!-- Permission.Camera -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Permission.Microphone -->
@@ -24,8 +27,12 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- Permission.MediaLocation (API 29+) -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <!-- Permission.BluetoothScan: API 31+ permission, pre-31 fallback needs fine location above -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <!-- Permission.NearbyWifiDevices: API 33+ permission, pre-33 fallback needs fine location above -->
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
     <!-- Permission.BodySensors (deprecated by Google in favor of granular health permissions) -->
@@ -51,10 +58,17 @@
     <!-- Permission.AudioFiles: API 33+ tier, pre-33 fallback via READ_EXTERNAL_STORAGE above -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
+    <!-- Permission.Health (Android 14+; also required for pre-14 Health Connect visibility) -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+
     <!-- Permission.Special.SystemAlertWindow -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Permission.Special.ExactAlarm (API 31+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Permission.Special.FullScreenIntent (API 34+) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Permission.Special.IgnoreBatteryOptimizations -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Permission.Special.WriteSettings -->
@@ -85,6 +99,10 @@
     <uses-feature android:name="android.hardware.sensor.heartrate" android:required="false" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+
     <application
         android:label="PermPilot Sample">
         <activity
@@ -93,6 +111,9 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.health.connect.registration.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
 

@@ -1,8 +1,11 @@
 package io.github.alirezajavan.permpilot
 
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -30,6 +33,16 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSError
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
+import platform.HealthKit.HKAuthorizationStatusSharingAuthorized
+import platform.HealthKit.HKHealthStore
+import platform.HealthKit.HKObjectType
+import platform.HealthKit.HKQuantityType
+import platform.HealthKit.HKQuantityTypeIdentifierActiveEnergyBurned
+import platform.HealthKit.HKQuantityTypeIdentifierBodyMass
+import platform.HealthKit.HKQuantityTypeIdentifierDistanceWalkingRunning
+import platform.HealthKit.HKQuantityTypeIdentifierHeartRate
+import platform.HealthKit.HKQuantityTypeIdentifierHeight
+import platform.HealthKit.HKQuantityTypeIdentifierStepCount
 import platform.MediaPlayer.MPMediaLibrary
 import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAuthorizationStatus
@@ -47,8 +60,13 @@ import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 import kotlin.coroutines.resume
 
+fun PermissionController.Companion.create(): PermissionController = IosPermissionController()
+
 class IosPermissionController : PermissionController {
     private val states = mutableMapOf<Permission, MutableStateFlow<PermissionState>>()
+
+    private val _events = MutableSharedFlow<PermissionEvent>(extraBufferCapacity = 64)
+    override val events: SharedFlow<PermissionEvent> = _events.asSharedFlow()
 
     // CLLocationManager/CBCentralManager report results through a delegate, not a completion
     // handler, so the manager and its in-flight continuation both need to be held as instance
@@ -72,7 +90,10 @@ class IosPermissionController : PermissionController {
                     // caller was cancelled while the system alert was up, its resume below is a
                     // no-op, but the StateFlow must still receive the real outcome (same rule as
                     // the Android controller's launcher callback).
-                    updateState(Permission.BluetoothScan, mapBluetoothAuthorization(CBManager.authorization))
+                    val status = mapBluetoothAuthorization(CBManager.authorization)
+                    updateState(Permission.BluetoothScan, status)
+                    updateState(Permission.BluetoothConnect, status)
+                    updateState(Permission.BluetoothAdvertise, status)
                 }
                 bluetoothContinuation?.let {
                     bluetoothContinuation = null
@@ -114,6 +135,7 @@ class IosPermissionController : PermissionController {
             return error
         }
 
+        _events.tryEmit(PermissionEvent.RequestStarted(permission))
         val newState =
             when (permission) {
                 Permission.Camera -> requestAVMediaAccess(AVMediaTypeVideo)
@@ -124,7 +146,10 @@ class IosPermissionController : PermissionController {
                 Permission.LocationWhileInUse -> requestForegroundLocation()
                 Permission.LocationAlways -> requestBackgroundLocation()
                 Permission.Notifications -> requestNotificationsAccess()
-                Permission.BluetoothScan -> requestBluetoothAccess()
+                Permission.BluetoothScan,
+                Permission.BluetoothConnect,
+                Permission.BluetoothAdvertise,
+                -> requestBluetoothAccess()
                 Permission.AppTrackingTransparency -> requestTrackingAuthorization()
                 // Same CNContactStore authorization as Contacts -- iOS doesn't distinguish read/write.
                 Permission.WriteContacts -> requestContactsAccess()
@@ -132,6 +157,8 @@ class IosPermissionController : PermissionController {
                 Permission.AudioFiles -> requestAudioFilesAccess()
                 Permission.SpeechRecognition -> requestSpeechRecognitionAccess()
                 Permission.Reminders -> requestRemindersAccess()
+                is Permission.Health -> requestHealthAccess(permission)
+                Permission.MediaLocation -> PermissionState.Granted
                 // Android-only concepts: no iOS equivalent exists, so requesting them is a no-op.
                 Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
                 Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,
@@ -140,6 +167,7 @@ class IosPermissionController : PermissionController {
                 -> PermissionState.Granted
             }
         updateState(permission, newState)
+        _events.tryEmit(PermissionEvent.RequestResult(permission, newState))
         return newState
     }
 
@@ -403,6 +431,82 @@ class IosPermissionController : PermissionController {
             }
         }
 
+    // --- Health -----------------------------------------------------------------------------
+
+    private val healthStore = HKHealthStore()
+
+    private suspend fun requestHealthAccess(permission: Permission.Health): PermissionState {
+        if (!HKHealthStore.isHealthDataAvailable()) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.HealthApiUnavailable)
+        }
+
+        val types = permission.dataTypes.map { it.toHKObjectType() }.toSet()
+        return suspendCancellableCoroutine { continuation ->
+            val completion: (Boolean, NSError?) -> Unit = { success, _ ->
+                runOnMain {
+                    if (success) {
+                        continuation.resume(checkHealthState(permission))
+                    } else {
+                        continuation.resume(PermissionState.Denied(canRequestAgain = true))
+                    }
+                }
+            }
+            when (permission.access) {
+                HealthAccess.Read -> healthStore.requestAuthorizationToShareTypes(null, readTypes = types, completion = completion)
+                HealthAccess.Write ->
+                    healthStore.requestAuthorizationToShareTypes(
+                        typesToShare = types,
+                        readTypes = null,
+                        completion = completion,
+                    )
+                HealthAccess.ReadWrite ->
+                    healthStore.requestAuthorizationToShareTypes(
+                        typesToShare = types,
+                        readTypes = types,
+                        completion = completion,
+                    )
+            }
+        }
+    }
+
+    private fun checkHealthState(permission: Permission.Health): PermissionState {
+        if (!HKHealthStore.isHealthDataAvailable()) {
+            return PermissionState.ConfigurationError(ConfigurationErrorReason.HealthApiUnavailable)
+        }
+
+        val types = permission.dataTypes.map { it.toHKObjectType() }
+        val statuses =
+            types.map { type ->
+                healthStore.authorizationStatusForType(type)
+            }
+
+        return when {
+            statuses.all { it == HKAuthorizationStatusSharingAuthorized } -> PermissionState.Granted
+            // HealthKit read-only access always returns NotDetermined even after a grant for privacy.
+            // We report this as NotDetermined or a custom state if we want to be more specific.
+            // For now, if any is NotDetermined, we return NotDetermined.
+            statuses.any { it == platform.HealthKit.HKAuthorizationStatusNotDetermined } -> PermissionState.NotDetermined
+            else -> PermissionState.PermanentlyDenied
+        }
+    }
+
+    private fun HealthDataType.toHKObjectType(): HKObjectType =
+        when (this) {
+            HealthDataType.Steps -> HKQuantityType.quantityTypeForIdentifier(HKQuantityTypeIdentifierStepCount)!!
+            HealthDataType.HeartRate -> HKQuantityType.quantityTypeForIdentifier(HKQuantityTypeIdentifierHeartRate)!!
+            HealthDataType.Sleep ->
+                platform.HealthKit.HKCategoryType.categoryTypeForIdentifier(
+                    platform.HealthKit.HKCategoryTypeIdentifierSleepAnalysis,
+                )!!
+            HealthDataType.ActiveEnergy -> HKQuantityType.quantityTypeForIdentifier(HKQuantityTypeIdentifierActiveEnergyBurned)!!
+            HealthDataType.DistanceWalkingRunning ->
+                HKQuantityType.quantityTypeForIdentifier(
+                    HKQuantityTypeIdentifierDistanceWalkingRunning,
+                )!!
+            HealthDataType.BodyMass -> HKQuantityType.quantityTypeForIdentifier(HKQuantityTypeIdentifierBodyMass)!!
+            HealthDataType.Height -> HKQuantityType.quantityTypeForIdentifier(HKQuantityTypeIdentifierHeight)!!
+        }
+
     // --- state() dispatch --------------------------------------------------------------------
 
     override fun refreshAll() {
@@ -429,7 +533,12 @@ class IosPermissionController : PermissionController {
         permission: Permission,
         state: PermissionState,
     ) {
-        states.getOrPut(permission) { MutableStateFlow(state) }.value = state
+        val flow = states.getOrPut(permission) { MutableStateFlow(state) }
+        val oldState = flow.value
+        flow.value = state
+        if (oldState != state) {
+            _events.tryEmit(PermissionEvent.StateChanged(permission, state))
+        }
     }
 
     private fun checkState(permission: Permission): PermissionState {
@@ -470,11 +579,15 @@ class IosPermissionController : PermissionController {
                     requestedAlways = true,
                     locationManager.accuracyAuthorization,
                 )
+            is Permission.Health -> checkHealthState(permission)
             Permission.Notifications -> {
                 refreshNotificationsState()
                 PermissionState.NotDetermined
             }
-            Permission.BluetoothScan -> mapBluetoothAuthorization(CBManager.authorization)
+            Permission.BluetoothScan,
+            Permission.BluetoothConnect,
+            Permission.BluetoothAdvertise,
+            -> mapBluetoothAuthorization(CBManager.authorization)
             Permission.AppTrackingTransparency ->
                 if (isAtLeastIOS(14)) {
                     mapTrackingStatus(ATTrackingManager.trackingAuthorizationStatus)
@@ -493,8 +606,9 @@ class IosPermissionController : PermissionController {
                 mapCalendarAuthorizationStatus(
                     EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeReminder),
                 )
+            Permission.MediaLocation -> PermissionState.Granted
             // Android-only concepts: no iOS equivalent exists, so these are permanently satisfied.
-            Permission.SystemAlertWindow, Permission.ExactAlarm, Permission.IgnoreBatteryOptimizations,
+            Permission.SystemAlertWindow, Permission.ExactAlarm, Permission.FullScreenIntent, Permission.IgnoreBatteryOptimizations,
             Permission.WriteSettings, Permission.ManageExternalStorage,
             Permission.DoNotDisturbAccess, Permission.UsageAccess, Permission.NotificationListenerAccess,
             Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,

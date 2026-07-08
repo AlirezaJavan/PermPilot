@@ -131,7 +131,7 @@ class AndroidPermissionControllerRobolectricTest {
             // default shouldShowRequestPermissionRationale is false here, mirroring "user's very first
             // ever prompt for this permission," which must NOT be read as a permanent denial.
             val requestDeferred = async { controller.request(Permission.Camera) }
-            val emitted = controller.multiRequestFlow.first()
+            val emitted = controller.multiRequestFlow.first() as PermissionRequest.Runtime
             emitted.onResult(mapOf(Manifest.permission.CAMERA to false))
 
             assertEquals(PermissionState.Denied(canRequestAgain = true), requestDeferred.await())
@@ -145,14 +145,14 @@ class AndroidPermissionControllerRobolectricTest {
             controller.updateActivity(activity)
 
             val first = async { controller.request(Permission.Camera) }
-            controller.multiRequestFlow.first().onResult(mapOf(Manifest.permission.CAMERA to false))
+            (controller.multiRequestFlow.first() as PermissionRequest.Runtime).onResult(mapOf(Manifest.permission.CAMERA to false))
             assertEquals(PermissionState.Denied(canRequestAgain = true), first.await())
 
             // Same Activity, same permission, requested a second time -- this is the exact scenario
             // Accompanist's bug conflated with "never asked" (both report shouldShowRationale = false
             // on a bare Robolectric Activity); the persisted hasRequested flag is what disambiguates them.
             val second = async { controller.request(Permission.Camera) }
-            controller.multiRequestFlow.first().onResult(mapOf(Manifest.permission.CAMERA to false))
+            (controller.multiRequestFlow.first() as PermissionRequest.Runtime).onResult(mapOf(Manifest.permission.CAMERA to false))
             assertEquals(PermissionState.PermanentlyDenied, second.await())
         }
 
@@ -168,7 +168,7 @@ class AndroidPermissionControllerRobolectricTest {
             controller.updateActivity(activity)
 
             val requestDeferred = async { controller.request(Permission.Microphone) }
-            controller.multiRequestFlow.first().onResult(mapOf(Manifest.permission.RECORD_AUDIO to true))
+            (controller.multiRequestFlow.first() as PermissionRequest.Runtime).onResult(mapOf(Manifest.permission.RECORD_AUDIO to true))
 
             assertEquals(PermissionState.Granted, requestDeferred.await())
             assertEquals(PermissionState.Granted, controller.state(Permission.Microphone).value)
@@ -191,7 +191,7 @@ class AndroidPermissionControllerRobolectricTest {
             // Distinct permission (Contacts) -- Robolectric's static SharedPreferences cache leaks the
             // persisted requested_* flags across test methods in this class (see the Granted test above).
             val requestJob = launch { controller.request(Permission.Contacts) }
-            val emitted = controller.multiRequestFlow.first()
+            val emitted = controller.multiRequestFlow.first() as PermissionRequest.Runtime
             requestJob.cancel()
             requestJob.join()
 
@@ -209,7 +209,7 @@ class AndroidPermissionControllerRobolectricTest {
             controller.updateActivity(activity)
 
             val requestJob = launch { controller.request(Permission.SendSms) }
-            val emitted = controller.multiRequestFlow.first()
+            val emitted = controller.multiRequestFlow.first() as PermissionRequest.Runtime
             requestJob.cancel()
             requestJob.join()
 
@@ -318,7 +318,7 @@ class AndroidPermissionControllerRobolectricTest {
 
             val resultsDeferred = async { controller.requestAll(Permission.Camera, Permission.Microphone) }
             // Only the declared Camera reaches the native launcher.
-            val emitted = controller.multiRequestFlow.first()
+            val emitted = controller.multiRequestFlow.first() as PermissionRequest.Runtime
             assertEquals(listOf(Manifest.permission.CAMERA), emitted.permissions.toList())
             emitted.onResult(mapOf(Manifest.permission.CAMERA to true))
 
@@ -457,7 +457,7 @@ class AndroidPermissionControllerRobolectricTest {
             controller.updateActivity(activity)
 
             val requestDeferred = async { controller.request(Permission.LocationWhileInUse) }
-            controller.multiRequestFlow.first().onResult(
+            (controller.multiRequestFlow.first() as PermissionRequest.Runtime).onResult(
                 mapOf(
                     Manifest.permission.ACCESS_FINE_LOCATION to false,
                     Manifest.permission.ACCESS_COARSE_LOCATION to true,
