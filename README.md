@@ -67,13 +67,13 @@ kotlin {
         commonMain.dependencies {
             // Compose Multiplatform UI layer (PermissionGate + default dialogs).
             // Brings permpilot-core in transitively via api().
-            implementation("io.github.alirezajavan:permpilot-compose:1.0.0")
+            implementation("io.github.alirezajavan:permpilot-compose:1.1.0")
 
             // Or, without Compose (e.g. shared ViewModels only):
-            // implementation("io.github.alirezajavan:permpilot-core:1.0.0")
+            // implementation("io.github.alirezajavan:permpilot-core:1.1.0")
 
             // Optional: SQLDelight-backed audit log (independently versioned)
-            // implementation("io.github.alirezajavan:permpilot-history:1.0.0")
+            // implementation("io.github.alirezajavan:permpilot-history:1.1.0")
         }
     }
 }

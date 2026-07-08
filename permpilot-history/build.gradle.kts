@@ -53,7 +53,7 @@ apiValidation {
 // permpilot-history is explicitly optional and independently versioned from permpilot-core/
 // permpilot-compose (which share the root gradle.properties VERSION_NAME) -- it can ship bugfixes
 // or add audit-log features on its own release cadence without forcing a core library bump.
-version = "1.0.0"
+version = "1.1.0"
 
 mavenPublishing {
     configure(
