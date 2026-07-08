@@ -30,6 +30,18 @@ enum class HealthAccess { Read, Write, ReadWrite }
 - Requires a separate Activity Result Contract provided by the Health Connect SDK.
 - Permission strings: `android.permission.health.READ_STEPS`, `android.permission.health.WRITE_STEPS`, etc.
 - If Health Connect is not installed, it should report `ConfigurationError(HealthApiUnavailable)`.
+- **Manifest requirements beyond `<uses-permission>` (consumer app, not PermPilot itself):** without these, the
+  consumer app never appears in Health Connect's own "Apps" list, regardless of how many
+  `android.permission.health.*` entries it declares:
+  - An `Activity` with an intent-filter for `androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE` — handles the
+    privacy-policy link Health Connect shows on its permission screen, pre-Android 14 (APK Health Connect).
+  - An `activity-alias` with an intent-filter for action `android.intent.action.VIEW_PERMISSION_USAGE` +
+    category `android.intent.category.HEALTH_PERMISSIONS`, and `android:permission="android.permission.health.START_ONBOARDING"`
+    — required for Android 14+ (platform Health Connect) to discover and list the app at all. Most current test
+    devices are on 14+, so skipping this makes the app invisible in Health Connect during manual QA.
+
+  Both can target the same host `Activity` (see `sample/androidApp/src/main/AndroidManifest.xml` for the
+  reference declaration). See `CLAUDE.md` rule 12.
 
 ### iOS (HealthKit)
 - Uses `HKHealthStore.requestAuthorization(toShare:read:)`.

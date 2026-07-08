@@ -46,7 +46,7 @@ you). **Info.plist key(s)** is what you must add to your own `Info.plist` on iOS
 | `ReadSms` | `READ_SMS` | *(none — no-op `Granted`)* | Android-only. |
 | `ReceiveSms` | `RECEIVE_SMS` | *(none — no-op `Granted`)* | Android-only. |
 | `AudioFiles` | `READ_MEDIA_AUDIO` (API 33+); falls back to `READ_EXTERNAL_STORAGE` below that | `NSAppleMusicUsageDescription` | Android `READ_MEDIA_AUDIO` paired with iOS's Apple Music library access (`MPMediaLibrary`). |
-| `Health(dataTypes, access)` | Health Connect permissions (e.g. `READ_STEPS`); requires Health Connect app/SDK | `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription` | Granular per data type. iOS read-only access may report `NotDetermined` even after a grant for privacy. Android reports `ConfigurationError` if Health Connect is unavailable. |
+| `Health(dataTypes, access)` | Health Connect permissions (e.g. `READ_STEPS`); requires Health Connect app/SDK | `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription` | Granular per data type. iOS read-only access may report `NotDetermined` even after a grant for privacy. Android reports `ConfigurationError` if Health Connect is unavailable. **Android also needs a manifest-declared rationale `Activity`/`activity-alias` beyond the `<uses-permission>` entries or your app never appears in Health Connect's app list** — see `docs/health-design.md`. |
 
 ---
 
