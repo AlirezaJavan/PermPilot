@@ -11,14 +11,23 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-actual fun rememberPermissionController(): PermissionController {
+actual fun rememberPermissionController(persistence: PermissionPersistence?): PermissionController {
     val context = LocalContext.current
-    val controller = remember { AndroidPermissionController(context.applicationContext) }
+    val scope = rememberCoroutineScope()
+    val controller =
+        remember {
+            PermissionController.create(
+                context.applicationContext,
+                scope = scope,
+                persistence = persistence,
+            ) as AndroidPermissionController
+        }
 
     // shouldShowRequestPermissionRationale is an Activity-only API; refresh the controller's
     // reference every recomposition so it survives Activity recreation across config changes.
@@ -27,6 +36,7 @@ actual fun rememberPermissionController(): PermissionController {
     }
 
     var currentMultiCallback by remember { mutableStateOf<((Map<String, Boolean>) -> Unit)?>(null) }
+    var currentHealthCallback by remember { mutableStateOf<((Set<String>) -> Unit)?>(null) }
 
     val multiLauncher =
         rememberLauncherForActivityResult(
@@ -36,10 +46,28 @@ actual fun rememberPermissionController(): PermissionController {
             currentMultiCallback = null
         }
 
+    val healthLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                androidx.health.connect.client.PermissionController
+                    .createRequestPermissionResultContract(),
+        ) { results ->
+            currentHealthCallback?.invoke(results)
+            currentHealthCallback = null
+        }
+
     LaunchedEffect(controller) {
         controller.multiRequestFlow.collectLatest { request ->
-            currentMultiCallback = request.onResult
-            multiLauncher.launch(request.permissions)
+            when (request) {
+                is PermissionRequest.Runtime -> {
+                    currentMultiCallback = request.onResult
+                    multiLauncher.launch(request.permissions)
+                }
+                is PermissionRequest.Health -> {
+                    currentHealthCallback = request.onResult
+                    healthLauncher.launch(request.permissions)
+                }
+            }
         }
     }
 

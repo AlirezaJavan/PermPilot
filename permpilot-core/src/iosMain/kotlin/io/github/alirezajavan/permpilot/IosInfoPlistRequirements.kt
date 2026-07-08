@@ -24,7 +24,10 @@ internal fun Permission.Runtime.requiredInfoPlistKeys(): List<String> =
                 "NSLocationWhenInUseUsageDescription",
                 "NSLocationAlwaysAndWhenInUseUsageDescription",
             )
-        Permission.BluetoothScan -> listOf("NSBluetoothAlwaysUsageDescription")
+        Permission.BluetoothScan,
+        Permission.BluetoothConnect,
+        Permission.BluetoothAdvertise,
+        -> listOf("NSBluetoothAlwaysUsageDescription")
         Permission.AppTrackingTransparency -> listOf("NSUserTrackingUsageDescription")
         Permission.Notifications -> emptyList() // UNUserNotificationCenter needs no Info.plist key.
         Permission.WriteContacts -> listOf("NSContactsUsageDescription") // same CNContactStore prompt as Contacts
@@ -32,6 +35,12 @@ internal fun Permission.Runtime.requiredInfoPlistKeys(): List<String> =
         Permission.AudioFiles -> listOf("NSAppleMusicUsageDescription")
         Permission.SpeechRecognition -> listOf("NSSpeechRecognitionUsageDescription")
         Permission.Reminders -> listOf("NSRemindersUsageDescription")
+        Permission.MediaLocation -> emptyList() // iOS no-op Granted.
+        is Permission.Health ->
+            listOfNotNull(
+                "NSHealthShareUsageDescription".takeIf { access != HealthAccess.Write },
+                "NSHealthUpdateUsageDescription".takeIf { access != HealthAccess.Read },
+            )
         // Android-only concepts; no iOS Info.plist requirement since the actuals never touch native APIs.
         Permission.NearbyWifiDevices, Permission.BodySensors, Permission.BodySensorsBackground,
         Permission.CallPhone, Permission.ReadPhoneState, Permission.ReadPhoneNumbers, Permission.AnswerPhoneCalls,

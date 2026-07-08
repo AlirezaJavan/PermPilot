@@ -12,7 +12,7 @@ you). **Info.plist key(s)** is what you must add to your own `Info.plist` on iOS
 
 ---
 
-## `Permission.Runtime` (27)
+## `Permission.Runtime` (31)
 
 | Permission | Android manifest permission(s) | iOS Info.plist key(s) | Notes |
 |---|---|---|---|
@@ -25,7 +25,10 @@ you). **Info.plist key(s)** is what you must add to your own `Info.plist` on iOS
 | `WriteContacts` | `WRITE_CONTACTS` | `NSContactsUsageDescription` (same key as `Contacts`) | iOS delegates to the same `CNContactStore` authorization as `Contacts` — no read/write distinction on that platform. |
 | `Calendar(access: CalendarAccess)` | `READ_CALENDAR` + `WRITE_CALENDAR` (always both — Android has no write-only tier, `CalendarAccess.WriteOnly` is ignored) | `NSCalendarsUsageDescription` | iOS 17+ splits `Full`/`WriteOnly` into distinct native calls; below 17, both fall back to the single legacy full-access API. |
 | `PhotoLibrary` | API 34+: `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO` + `READ_MEDIA_VISUAL_USER_SELECTED`; API 33: images+video only; pre-33: `READ_EXTERNAL_STORAGE` (`maxSdkVersion=32`) | `NSPhotoLibraryUsageDescription` | Partial/selected-photos grant → `Limited(PartialMediaAccess)` on both platforms (API 34+ on Android, iOS 14+'s `.limited`). |
+| `MediaLocation` | `ACCESS_MEDIA_LOCATION` (API 29+) | *(none)* | Lets an app read GPS EXIF data from photos. Android-only; iOS no-op `Granted` (location is included with Photos access). Only meaningful once photo access is granted. |
 | `BluetoothScan` | `BLUETOOTH_SCAN` (API 31+); falls back to `ACCESS_FINE_LOCATION` on API 24–30 | `NSBluetoothAlwaysUsageDescription` | iOS: no explicit request call — instantiating a `CBCentralManager` for the first time triggers the system prompt. |
+| `BluetoothConnect` | `BLUETOOTH_CONNECT` (API 31+); empty list pre-31 → auto-`Granted` | `NSBluetoothAlwaysUsageDescription` | iOS: same `CBCentralManager` authorization as `BluetoothScan`. |
+| `BluetoothAdvertise` | `BLUETOOTH_ADVERTISE` (API 31+); empty list pre-31 → auto-`Granted` | `NSBluetoothAlwaysUsageDescription` | iOS: same `CBCentralManager` authorization as `BluetoothScan`. |
 | `NearbyWifiDevices` | `NEARBY_WIFI_DEVICES` (API 33+); falls back to `ACCESS_FINE_LOCATION` below that | *(none)* | Android-only concept; iOS actual is a no-op `Granted`. |
 | `BodySensors` | `BODY_SENSORS` (unconditional, stable since API 23) | *(none)* | Android-only, deprecated by Google in favor of granular `android.permission.health.*`; iOS actual is a no-op `Granted`. |
 | `BodySensorsBackground` | `BODY_SENSORS_BACKGROUND` (API 33+; implied granted below that once foreground is granted) | *(none)* | Staged the same way as `LocationAlways`: foreground `BodySensors` must already be granted. Android-only; iOS actual is a no-op `Granted`. |
@@ -43,17 +46,19 @@ you). **Info.plist key(s)** is what you must add to your own `Info.plist` on iOS
 | `ReadSms` | `READ_SMS` | *(none — no-op `Granted`)* | Android-only. |
 | `ReceiveSms` | `RECEIVE_SMS` | *(none — no-op `Granted`)* | Android-only. |
 | `AudioFiles` | `READ_MEDIA_AUDIO` (API 33+); falls back to `READ_EXTERNAL_STORAGE` below that | `NSAppleMusicUsageDescription` | Android `READ_MEDIA_AUDIO` paired with iOS's Apple Music library access (`MPMediaLibrary`). |
+| `Health(dataTypes, access)` | Health Connect permissions (e.g. `READ_STEPS`); requires Health Connect app/SDK | `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription` | Granular per data type. iOS read-only access may report `NotDetermined` even after a grant for privacy. Android reports `ConfigurationError` if Health Connect is unavailable. **Android also needs a manifest-declared rationale `Activity`/`activity-alias` beyond the `<uses-permission>` entries or your app never appears in Health Connect's app list** — see `docs/health-design.md`. |
 
 ---
 
-## `Permission.Special` (8) — Android Settings-redirect only, no request dialog
+## `Permission.Special` (9) — Android Settings-redirect only, no request dialog
 
-No manifest permission is *requested* for these (some still need a manifest **declaration** — see notes); `request()` doesn't apply to `Special` permissions at all, only `state()` (a live check) and `openAppSettings(special)` (a direct Settings redirect). All eight are no-op `Granted` on iOS, which has no equivalent concept — `openAppSettings(special)` there just calls the one generic `openAppSettings()` since iOS has no per-permission deep link.
+No manifest permission is *requested* for these (some still need a manifest **declaration** — see notes); `request()` doesn't apply to `Special` permissions at all, only `state()` (a live check) and `openAppSettings(special)` (a direct Settings redirect). All nine are no-op `Granted` on iOS, which has no equivalent concept — `openAppSettings(special)` there just calls the one generic `openAppSettings()` since iOS has no per-permission deep link.
 
 | Permission | Android live check | Android Settings intent | Notes |
 |---|---|---|---|
 | `SystemAlertWindow` | `Settings.canDrawOverlays(context)` | `ACTION_MANAGE_OVERLAY_PERMISSION` + `package:` data URI | |
 | `ExactAlarm` | `AlarmManager.canScheduleExactAlarms()` (API 31+; `Granted` below that) | `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` (API 31+) / `ACTION_APPLICATION_DETAILS_SETTINGS` (below) + `package:` data URI | |
+| `FullScreenIntent` | `NotificationManager.canUseFullScreenIntent()` (API 34+; `Granted` below that) | `ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT` (API 34+) / `ACTION_APPLICATION_DETAILS_SETTINGS` (below) + `package:` data URI | |
 | `IgnoreBatteryOptimizations` | `PowerManager.isIgnoringBatteryOptimizations(packageName)` | `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + `package:` data URI | |
 | `WriteSettings` | `Settings.System.canWrite(context)` | `ACTION_MANAGE_WRITE_SETTINGS` + `package:` data URI | |
 | `ManageExternalStorage` | `Environment.isExternalStorageManager()` (API 30+; `Granted` below that) | `ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION` (API 30+) / `ACTION_APPLICATION_DETAILS_SETTINGS` (below) + `package:` data URI | |
@@ -91,7 +96,7 @@ enum class ConfigurationErrorReason { NoHostActivity, MissingUsageDescription, M
 
 - **`Restricted`** (MDM/parental controls) is terminal on both platforms — nothing in Settings can fix it, so `PermissionGate` never offers a settings prompt for it.
 - **`ConfigurationError`** is not a user decision — it's a library-integration mistake (`NoHostActivity`: `request()` called before `rememberPermissionController()` was ever composed into an Activity-hosted screen; `MissingUsageDescription`: the required `Info.plist` key(s) above are missing; `MissingManifestDeclaration`: the required Android manifest `<uses-permission>` or service declaration is missing). Fix your integration, not your permission-handling logic.
-- **`SelectedContactsOnly`** exists in the model for parity with the other partial-grant tiers but has no producer yet on either platform today — neither OS currently exposes a selected-contacts-only grant the way it does for photos/location.
+- **`SelectedContactsOnly`** exists in the model for parity with the other partial-grant tiers — iOS 18 added a limited-contacts grant (`CNAuthorizationStatusLimited`) which PermPilot reports here. Android has no equivalent today.
 
 ---
 

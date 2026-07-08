@@ -2,6 +2,7 @@ package io.github.alirezajavan.permpilot.sample
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -23,13 +24,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.alirezajavan.permpilot.CalendarAccess
+import io.github.alirezajavan.permpilot.HealthAccess
+import io.github.alirezajavan.permpilot.HealthDataType
 import io.github.alirezajavan.permpilot.Permission
 import io.github.alirezajavan.permpilot.PermissionController
+import io.github.alirezajavan.permpilot.PermissionDashboard
 import io.github.alirezajavan.permpilot.PermissionGate
 import io.github.alirezajavan.permpilot.PermissionState
+import io.github.alirezajavan.permpilot.PermissionsGate
 import io.github.alirezajavan.permpilot.history.HistoryPermissionController
 import io.github.alirezajavan.permpilot.history.PermissionHistoryEntry
 import io.github.alirezajavan.permpilot.rememberPermissionController
+import io.github.alirezajavan.permpilot.resolveCombinedState
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -48,12 +55,19 @@ private val demoPermissions: List<Permission.Runtime> =
         Permission.WriteContacts,
         Permission.Calendar(CalendarAccess.Full),
         Permission.PhotoLibrary,
+        Permission.MediaLocation,
         Permission.AudioFiles,
         Permission.BluetoothScan,
+        Permission.BluetoothConnect,
+        Permission.BluetoothAdvertise,
         Permission.NearbyWifiDevices,
         Permission.BodySensors,
         Permission.BodySensorsBackground,
         Permission.ActivityRecognition,
+        Permission.Health(
+            dataTypes = setOf(HealthDataType.Steps, HealthDataType.HeartRate, HealthDataType.Sleep),
+            access = HealthAccess.Read,
+        ),
         Permission.CallPhone,
         Permission.ReadPhoneState,
         Permission.ReadPhoneNumbers,
@@ -76,6 +90,7 @@ private val demoSpecialPermissions: List<Permission.Special> =
     listOf(
         Permission.SystemAlertWindow,
         Permission.ExactAlarm,
+        Permission.FullScreenIntent,
         Permission.IgnoreBatteryOptimizations,
         Permission.WriteSettings,
         Permission.ManageExternalStorage,
@@ -112,6 +127,15 @@ fun App() {
             ) {
                 item {
                     HistoryCard(historyEntries, onClear = { scope.launch { historyStore.clear() } })
+                }
+                item {
+                    PermissionsGateDemoRow(controller)
+                }
+                item {
+                    ViewModelDemoRow(controller)
+                }
+                item {
+                    DashboardDemo(controller)
                 }
                 items(demoPermissions) { permission ->
                     PermissionDemoRow(permission, controller)
@@ -150,6 +174,87 @@ private fun HistoryCard(
             }
             Button(onClick = onClear) {
                 Text("Clear history")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardDemo(controller: PermissionController) {
+    var showDashboard by remember { mutableStateOf(false) }
+    val allPermissions = remember { demoPermissions + demoSpecialPermissions }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("PermissionDashboard (Inline Demo)", style = MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = { showDashboard = !showDashboard },
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                Text(if (showDashboard) "Hide Dashboard" else "Show Dashboard")
+            }
+
+            if (showDashboard) {
+                PermissionDashboard(
+                    permissions = allPermissions,
+                    controller = controller,
+                    modifier = Modifier.heightIn(max = 400.dp),
+                    contentPadding = PaddingValues(top = 16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionsGateDemoRow(controller: PermissionController) {
+    var showGate by remember { mutableStateOf(false) }
+    val permissions = remember { listOf(Permission.Camera, Permission.Microphone) }
+
+    // Combined state is tracked independently of `showGate` so the granted outcome persists after
+    // the gate is dismissed -- deriving "already granted" only from the gate's own content (which
+    // stops recomposing once `showGate` flips false) made the demo flash "Combined state: Granted"
+    // for a single frame and then fall back to the "Request both" button, because nothing outside
+    // the gate remembered that the permissions were in fact granted.
+    val states by
+        remember(permissions) {
+            combine(permissions.map { controller.state(it) }) { it.toList() }
+        }.collectAsState(initial = permissions.map { controller.state(it).value })
+    val combined = resolveCombinedState(states)
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("PermissionsGate (Camera + Mic)", style = MaterialTheme.typography.titleMedium)
+
+            if (combined == PermissionState.Granted) {
+                Text(
+                    "Combined state: $combined",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            } else if (!showGate) {
+                Button(
+                    onClick = { showGate = true },
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text("Request both")
+                }
+            }
+
+            if (showGate && combined != PermissionState.Granted) {
+                PermissionsGate(
+                    permissions = permissions,
+                    controller = controller,
+                    onDismiss = { showGate = false },
+                ) { gateStates ->
+                    Text(
+                        "Combined state: ${resolveCombinedState(gateStates.values.toList())}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
     }
@@ -262,5 +367,6 @@ private fun PermissionDemoRow(
 private fun Permission.Runtime.label(): String =
     when (this) {
         is Permission.Calendar -> "Calendar ($access)"
+        is Permission.Health -> "Health ($access, ${dataTypes.size} types)"
         else -> this::class.simpleName ?: "Unknown"
     }

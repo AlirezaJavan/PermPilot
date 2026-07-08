@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permpilot_rationale_title">Autorisation Requise</string>
+    <string name="permpilot_rationale_text">Cette application a besoin d\'accéder à votre %1$s pour fonctionner correctement.</string>
+    <string name="permpilot_rationale_confirm">Autoriser</string>
+    <string name="permpilot_rationale_dismiss">Refuser</string>
+
+    <string name="permpilot_restricted_title">Accès Restreint</string>
+    <string name="permpilot_restricted_text">L\'accès à %1$s est restreint par une politique de l\'appareil (telle que le contrôle parental ou un profil MDM) et ne peut pas être modifié depuis cette application ou son écran de Paramètres.</string>
+    <string name="permpilot_restricted_confirm">OK</string>
+
+    <string name="permpilot_error_title">Erreur de configuration PermPilot</string>
+    <string name="permpilot_error_text">Impossible de demander %1$s : %2$s</string>
+    <string name="permpilot_error_confirm">OK</string>
+
+    <string name="permpilot_error_no_host_activity">rememberPermissionController() n\'a jamais été composé dans un écran hébergé par une activité, il n\'y a donc nulle part où afficher la boîte de dialogue d\'autorisation du système.</string>
+    <string name="permpilot_error_missing_usage_description">les clés de description d\'utilisation Info.plist pour %1$s sont manquantes.</string>
+    <string name="permpilot_error_missing_manifest_declaration">le AndroidManifest ne contient pas ce dont %1$s a besoin -- une déclaration &lt;uses-permission&gt; (pour DoNotDisturbAccess : ACCESS_NOTIFICATION_POLICY), ou un NotificationListenerService déclaré pour NotificationListenerAccess.</string>
+    <string name="permpilot_error_health_unavailable">l\'API de santé au niveau de l\'OS n\'est pas disponible sur cet appareil (par exemple, Health Connect n\'est pas installé sur Android, ou HealthKit est restreint sur iOS).</string>
+
+    <string name="permpilot_settings_title">Autorisation Refusée</string>
+    <string name="permpilot_settings_text">Vous avez refusé l\'autorisation %1$s. Veuillez l\'activer dans les paramètres.</string>
+    <string name="permpilot_settings_confirm">Ouvrir les Paramètres</string>
+    <string name="permpilot_settings_dismiss">Annuler</string>
+</resources>

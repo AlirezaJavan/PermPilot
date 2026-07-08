@@ -3,6 +3,15 @@ package io.github.alirezajavan.permpilot
 import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.HeightRecord
+import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.WeightRecord
+import kotlin.reflect.KClass
 
 /**
  * Maps a [Permission.Runtime] to the manifest permission string(s) that must be requested
@@ -63,6 +72,18 @@ internal fun Permission.Runtime.toManifestPermissions(): List<String> =
                     Manifest.permission.ACCESS_FINE_LOCATION
                 },
             )
+        Permission.BluetoothConnect ->
+            if (Build.VERSION.SDK_INT >= 31) {
+                listOf(Manifest.permission.BLUETOOTH_CONNECT)
+            } else {
+                emptyList()
+            }
+        Permission.BluetoothAdvertise ->
+            if (Build.VERSION.SDK_INT >= 31) {
+                listOf(Manifest.permission.BLUETOOTH_ADVERTISE)
+            } else {
+                emptyList()
+            }
         Permission.NearbyWifiDevices ->
             listOf(
                 if (Build.VERSION.SDK_INT >= 33) {
@@ -106,9 +127,41 @@ internal fun Permission.Runtime.toManifestPermissions(): List<String> =
             } else {
                 listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
+        Permission.MediaLocation ->
+            if (Build.VERSION.SDK_INT >= 29) {
+                listOf(Manifest.permission.ACCESS_MEDIA_LOCATION)
+            } else {
+                emptyList()
+            }
+        is Permission.Health -> this.toHealthPermissions()
         // No Android equivalent to iOS's App Tracking Transparency, Speech Recognition, or Reminders
         // exists; all three are treated as always granted here.
         Permission.AppTrackingTransparency, Permission.SpeechRecognition, Permission.Reminders -> emptyList()
+    }
+
+internal fun Permission.Health.toHealthPermissions(): List<String> =
+    dataTypes.flatMap { type ->
+        val recordType = type.toRecordType()
+        when (access) {
+            HealthAccess.Read -> listOf(HealthPermission.getReadPermission(recordType))
+            HealthAccess.Write -> listOf(HealthPermission.getWritePermission(recordType))
+            HealthAccess.ReadWrite ->
+                listOf(
+                    HealthPermission.getReadPermission(recordType),
+                    HealthPermission.getWritePermission(recordType),
+                )
+        }
+    }
+
+private fun HealthDataType.toRecordType(): KClass<out androidx.health.connect.client.records.Record> =
+    when (this) {
+        HealthDataType.Steps -> StepsRecord::class
+        HealthDataType.HeartRate -> HeartRateRecord::class
+        HealthDataType.Sleep -> SleepSessionRecord::class
+        HealthDataType.ActiveEnergy -> ActiveCaloriesBurnedRecord::class
+        HealthDataType.DistanceWalkingRunning -> DistanceRecord::class
+        HealthDataType.BodyMass -> WeightRecord::class
+        HealthDataType.Height -> HeightRecord::class
     }
 
 /**
@@ -132,9 +185,6 @@ internal fun Permission.Runtime.requiredManifestDeclarations(): List<String> =
             }
         else -> toManifestPermissions()
     }
-
-/** Stable per-permission key for the persisted "has this ever been requested" flag store. */
-internal fun Permission.persistenceKey(): String = this::class.simpleName ?: this.toString()
 
 /*
  * Pure post-request/post-check grant-result interpretation, decoupled from any live Context or

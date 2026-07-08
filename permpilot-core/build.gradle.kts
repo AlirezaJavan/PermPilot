@@ -19,6 +19,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.health.connect.client)
         }
 
         getByName("androidHostTest").dependencies {

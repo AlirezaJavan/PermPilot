@@ -43,10 +43,13 @@ None of this leaks into your app code. There are no exceptions to catch, no `bin
 ## Features
 
 - **One API, both platforms** -- `request()` returns a sealed `PermissionState` covering every outcome either OS can produce: `NotDetermined`, `Granted`, `Denied(canRequestAgain)`, `PermanentlyDenied`, `Restricted`, `Limited(reason)`, `ConfigurationError(reason)`.
-- **35-entry permission catalog** -- 27 `Runtime` permissions (camera, microphone, location tiers, photos/media, Bluetooth, telephony/SMS/call log, sensors, activity recognition, ATT, speech, reminders, ...) and 8 Android `Special` permissions (overlay, exact alarms, battery optimizations, write settings, all-files access, DND access, usage access, notification-listener access). See the [permission matrix](docs/permission-matrix.md).
+- **41-entry permission catalog** -- 31 `Runtime` permissions (camera, microphone, location tiers, photos/media, Bluetooth, Health (Health Connect/HealthKit), telephony/SMS/call log, sensors, activity recognition, ATT, speech, reminders, ...) and 9 Android `Special` permissions (overlay, exact alarms, full-screen intent, battery optimizations, write settings, all-files access, DND access, usage access, notification-listener access). See the [permission matrix](docs/permission-matrix.md).
 - **Staged requests sequenced for you** -- background location / background body sensors on Android, when-in-use → always upgrade on iOS: one `request()` call, correct two-step choreography inside.
-- **Partial grants modeled, not mangled** -- approximate-only location and selected-photos access surface as `Limited(ApproximateLocationOnly)` / `Limited(PartialMediaAccess)`, matching iOS's independent accuracy/selection axes.
-- **`PermissionGate`** -- a Compose wrapper that always renders your content first, then layers the right prompt (rationale, "open Settings", restricted notice, configuration-error notice) on top of live state. Every prompt is replaceable; every default dialog's copy is parameterized.
+- **Partial grants modeled, not mangled** -- approximate-only location, selected-photos, and **selected-contacts** (iOS 18) access surface as `Limited(ApproximateLocationOnly)`, `Limited(PartialMediaAccess)`, or `Limited(SelectedContactsOnly)`.
+- **`PermissionGate` & `PermissionsGate`** -- Compose wrappers that always render your content first, then layer the right prompt on top of live state. `PermissionsGate` handles multiple permissions together with a single rationale/settings flow.
+- **Built-in Localization** -- Default dialogs are localized to **English, Spanish, French, and German** out of the box. Every prompt remains replaceable or overridable.
+- **`PermissionDashboard`** -- A ready-to-use library component to build a "Privacy Settings" screen listing every permission, its state, and settings links.
+- **Observability (Analytics)** -- `controller.events` provides a structured stream of `PermissionEvent`s (`StateChanged`, `RequestStarted`, `RequestResult`) to wire into your analytics funnel without scattering logging.
 - **Reactive state** -- `state(permission)` is a `StateFlow<PermissionState>`; grants made in the OS Settings app are picked up automatically on `ON_RESUME` and republished to every observer.
 - **Fail-fast configuration errors** -- missing host `Activity`, missing `Info.plist` key, an undeclared `<uses-permission>` for a runtime permission, or a missing Special-permission prerequisite (`SYSTEM_ALERT_WINDOW`, `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `WRITE_SETTINGS`, `MANAGE_EXTERNAL_STORAGE`, `PACKAGE_USAGE_STATS`, `ACCESS_NOTIFICATION_POLICY`, or a declared `NotificationListenerService`) all report as `ConfigurationError` through the same exhaustive `when` -- never a crash, hang, or fake denial. Legitimate partial declarations (coarse-only location, photos without the API-34 partial-selection tier) are recognized and not flagged.
 - **Crash-safe result delivery** -- request outcomes are published to the `StateFlow` from the OS callback itself, so even if the coroutine that launched the request is cancelled mid-dialog (e.g. its composable left composition), the UI still receives the real result.
@@ -64,13 +67,13 @@ kotlin {
         commonMain.dependencies {
             // Compose Multiplatform UI layer (PermissionGate + default dialogs).
             // Brings permpilot-core in transitively via api().
-            implementation("io.github.alirezajavan:permpilot-compose:1.0.0")
+            implementation("io.github.alirezajavan:permpilot-compose:1.1.0")
 
             // Or, without Compose (e.g. shared ViewModels only):
-            // implementation("io.github.alirezajavan:permpilot-core:1.0.0")
+            // implementation("io.github.alirezajavan:permpilot-core:1.1.0")
 
             // Optional: SQLDelight-backed audit log (independently versioned)
-            // implementation("io.github.alirezajavan:permpilot-history:1.0.0")
+            // implementation("io.github.alirezajavan:permpilot-history:1.1.0")
         }
     }
 }
@@ -136,7 +139,7 @@ Button(onClick = {
 
 ## Usage
 
-### The 90% case: `PermissionGate`
+### The 90% case: `PermissionGate` (and `PermissionsGate`)
 
 ```kotlin
 @Composable
@@ -145,6 +148,18 @@ fun CameraScreen() {
         when (state) {
             PermissionState.Granted -> CameraPreview()
             else -> Text("Camera access needed to continue")
+        }
+    }
+}
+
+// Or for multiple permissions together:
+@Composable
+fun VideoCallScreen() {
+    PermissionsGate(permissions = listOf(Permission.Camera, Permission.Microphone)) { states ->
+        if (states.values.all { it == PermissionState.Granted }) {
+            VideoCallUI()
+        } else {
+            Text("Camera and Microphone access needed")
         }
     }
 }
@@ -216,6 +231,46 @@ if (state is PermissionState.Limited) {
 }
 ```
 
+### Observability (Analytics)
+
+Monitor permission funnels without scattering logs in your UI:
+
+```kotlin
+val controller = rememberPermissionController()
+LaunchedEffect(controller) {
+    controller.events.collect { event ->
+        when (event) {
+            is PermissionEvent.RequestResult -> {
+                analytics.logEvent("permission_result", mapOf(
+                    "permission" to event.permission.toString(),
+                    "result" to event.result.toString()
+                ))
+            }
+            is PermissionEvent.StateChanged -> {
+                println("${event.permission} changed to ${event.newState}")
+            }
+            is PermissionEvent.RequestStarted -> {
+                analytics.logEvent("permission_dialog_shown", mapOf(
+                    "permission" to event.permission.toString()
+                ))
+            }
+        }
+    }
+}
+```
+
+### `PermissionDashboard`
+
+Create a "Privacy Settings" or "Permissions" screen in one line:
+
+```kotlin
+PermissionDashboard(
+    controller = controller,
+    permissions = listOf(Permission.Camera, Permission.Microphone, Permission.LocationWhileInUse),
+    modifier = Modifier.fillMaxSize()
+)
+```
+
 ### Driving the controller directly (ViewModels, non-Compose logic)
 
 `PermissionController` lives in `permpilot-core`, which has **zero** Compose dependency:
@@ -279,6 +334,15 @@ controller.setState(Permission.Camera, PermissionState.Denied(canRequestAgain = 
 // no Activity, no iOS runtime, no OS permission dialog required.
 ```
 
+### Pluggable Persistence (Android)
+
+Customize how the "has requested" flags are stored on Android (e.g. for encrypted storage):
+
+```kotlin
+val persistence = SharedPreferencesPermissionPersistence(context, prefsName = "my_custom_prefs")
+val controller = PermissionController.create(context, persistence = persistence)
+```
+
 ## Core API
 
 ```kotlin
@@ -305,6 +369,7 @@ sealed interface PermissionState {
 }
 
 interface PermissionController {
+    val events: SharedFlow<PermissionEvent>
     fun state(permission: Permission): StateFlow<PermissionState>
     suspend fun request(permission: Permission.Runtime): PermissionState
     suspend fun requestAll(vararg permissions: Permission.Runtime): Map<Permission, PermissionState>
@@ -390,6 +455,7 @@ Three test source sets in `permpilot-core`, each targeting what's actually testa
 
 - [Permission matrix](docs/permission-matrix.md) -- every catalog entry, its Android manifest permission(s) and API-level gating, iOS `Info.plist` key(s), and platform notes.
 - [iOS Info.plist checklist](docs/ios-info-plist-checklist.md) -- the usage-description keys each permission requires.
+- [Health & Fitness design](docs/health-design.md) -- the `Health`/`HealthDataType`/`HealthAccess` model and the Health Connect / HealthKit platform mapping, including the Android manifest entries Health Connect needs beyond `<uses-permission>` to list your app at all.
 - [Roadmap](docs/ROADMAP.md) -- planned permissions and features to add next, as step-by-step tasks with per-step done markers (built to be picked up and continued by any contributor or AI coding agent).
 
 ## Contributing

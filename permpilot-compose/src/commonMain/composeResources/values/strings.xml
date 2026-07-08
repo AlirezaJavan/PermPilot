@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permpilot_rationale_title">Permission Required</string>
+    <string name="permpilot_rationale_text">This app needs access to your %1$s to function correctly.</string>
+    <string name="permpilot_rationale_confirm">Allow</string>
+    <string name="permpilot_rationale_dismiss">Deny</string>
+
+    <string name="permpilot_restricted_title">Access Restricted</string>
+    <string name="permpilot_restricted_text">Access to %1$s is restricted by a device policy (such as parental controls or an MDM profile) and can\'t be changed from within this app or its Settings screen.</string>
+    <string name="permpilot_restricted_confirm">OK</string>
+
+    <string name="permpilot_error_title">PermPilot configuration error</string>
+    <string name="permpilot_error_text">Can\'t request %1$s: %2$s</string>
+    <string name="permpilot_error_confirm">OK</string>
+
+    <string name="permpilot_error_no_host_activity">rememberPermissionController() was never composed into an Activity-hosted screen, so there\'s nowhere to show the system permission dialog.</string>
+    <string name="permpilot_error_missing_usage_description">the Info.plist usage-description key(s) for %1$s are missing.</string>
+    <string name="permpilot_error_missing_manifest_declaration">the AndroidManifest is missing what %1$s needs -- a &lt;uses-permission&gt; declaration (for DoNotDisturbAccess: ACCESS_NOTIFICATION_POLICY), or a declared NotificationListenerService for NotificationListenerAccess.</string>
+    <string name="permpilot_error_health_unavailable">the OS-level Health API is not available on this device (e.g. Health Connect is not installed on Android, or HealthKit is restricted on iOS).</string>
+
+    <string name="permpilot_settings_title">Permission Denied</string>
+    <string name="permpilot_settings_text">You have denied %1$s permission. Please enable it in settings.</string>
+    <string name="permpilot_settings_confirm">Open Settings</string>
+    <string name="permpilot_settings_dismiss">Cancel</string>
+</resources>

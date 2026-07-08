@@ -18,6 +18,7 @@ final enum class io.github.alirezajavan.permpilot/CalendarAccess : kotlin/Enum<i
 }
 
 final enum class io.github.alirezajavan.permpilot/ConfigurationErrorReason : kotlin/Enum<io.github.alirezajavan.permpilot/ConfigurationErrorReason> { // io.github.alirezajavan.permpilot/ConfigurationErrorReason|null[0]
+    enum entry HealthApiUnavailable // io.github.alirezajavan.permpilot/ConfigurationErrorReason.HealthApiUnavailable|null[0]
     enum entry MissingManifestDeclaration // io.github.alirezajavan.permpilot/ConfigurationErrorReason.MissingManifestDeclaration|null[0]
     enum entry MissingUsageDescription // io.github.alirezajavan.permpilot/ConfigurationErrorReason.MissingUsageDescription|null[0]
     enum entry NoHostActivity // io.github.alirezajavan.permpilot/ConfigurationErrorReason.NoHostActivity|null[0]
@@ -27,6 +28,34 @@ final enum class io.github.alirezajavan.permpilot/ConfigurationErrorReason : kot
 
     final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/ConfigurationErrorReason // io.github.alirezajavan.permpilot/ConfigurationErrorReason.valueOf|valueOf#static(kotlin.String){}[0]
     final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/ConfigurationErrorReason> // io.github.alirezajavan.permpilot/ConfigurationErrorReason.values|values#static(){}[0]
+}
+
+final enum class io.github.alirezajavan.permpilot/HealthAccess : kotlin/Enum<io.github.alirezajavan.permpilot/HealthAccess> { // io.github.alirezajavan.permpilot/HealthAccess|null[0]
+    enum entry Read // io.github.alirezajavan.permpilot/HealthAccess.Read|null[0]
+    enum entry ReadWrite // io.github.alirezajavan.permpilot/HealthAccess.ReadWrite|null[0]
+    enum entry Write // io.github.alirezajavan.permpilot/HealthAccess.Write|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot/HealthAccess.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot/HealthAccess> // io.github.alirezajavan.permpilot/HealthAccess.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/HealthAccess // io.github.alirezajavan.permpilot/HealthAccess.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/HealthAccess> // io.github.alirezajavan.permpilot/HealthAccess.values|values#static(){}[0]
+}
+
+final enum class io.github.alirezajavan.permpilot/HealthDataType : kotlin/Enum<io.github.alirezajavan.permpilot/HealthDataType> { // io.github.alirezajavan.permpilot/HealthDataType|null[0]
+    enum entry ActiveEnergy // io.github.alirezajavan.permpilot/HealthDataType.ActiveEnergy|null[0]
+    enum entry BodyMass // io.github.alirezajavan.permpilot/HealthDataType.BodyMass|null[0]
+    enum entry DistanceWalkingRunning // io.github.alirezajavan.permpilot/HealthDataType.DistanceWalkingRunning|null[0]
+    enum entry HeartRate // io.github.alirezajavan.permpilot/HealthDataType.HeartRate|null[0]
+    enum entry Height // io.github.alirezajavan.permpilot/HealthDataType.Height|null[0]
+    enum entry Sleep // io.github.alirezajavan.permpilot/HealthDataType.Sleep|null[0]
+    enum entry Steps // io.github.alirezajavan.permpilot/HealthDataType.Steps|null[0]
+
+    final val entries // io.github.alirezajavan.permpilot/HealthDataType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.alirezajavan.permpilot/HealthDataType> // io.github.alirezajavan.permpilot/HealthDataType.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.alirezajavan.permpilot/HealthDataType // io.github.alirezajavan.permpilot/HealthDataType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.alirezajavan.permpilot/HealthDataType> // io.github.alirezajavan.permpilot/HealthDataType.values|values#static(){}[0]
 }
 
 final enum class io.github.alirezajavan.permpilot/LimitedReason : kotlin/Enum<io.github.alirezajavan.permpilot/LimitedReason> { // io.github.alirezajavan.permpilot/LimitedReason|null[0]
@@ -42,12 +71,22 @@ final enum class io.github.alirezajavan.permpilot/LimitedReason : kotlin/Enum<io
 }
 
 abstract interface io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/PermissionController|null[0]
+    abstract val events // io.github.alirezajavan.permpilot/PermissionController.events|{}events[0]
+        abstract fun <get-events>(): kotlinx.coroutines.flow/SharedFlow<io.github.alirezajavan.permpilot/PermissionEvent> // io.github.alirezajavan.permpilot/PermissionController.events.<get-events>|<get-events>(){}[0]
+
     abstract fun openAppSettings() // io.github.alirezajavan.permpilot/PermissionController.openAppSettings|openAppSettings(){}[0]
     abstract fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot/PermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
     abstract fun refreshAll() // io.github.alirezajavan.permpilot/PermissionController.refreshAll|refreshAll(){}[0]
     abstract fun state(io.github.alirezajavan.permpilot/Permission): kotlinx.coroutines.flow/StateFlow<io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/PermissionController.state|state(io.github.alirezajavan.permpilot.Permission){}[0]
     abstract suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
     abstract suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/PermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
+
+    final object Companion // io.github.alirezajavan.permpilot/PermissionController.Companion|null[0]
+}
+
+abstract interface io.github.alirezajavan.permpilot/PermissionPersistence { // io.github.alirezajavan.permpilot/PermissionPersistence|null[0]
+    abstract fun isRequested(io.github.alirezajavan.permpilot/Permission): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionPersistence.isRequested|isRequested(io.github.alirezajavan.permpilot.Permission){}[0]
+    abstract fun markRequested(io.github.alirezajavan.permpilot/Permission) // io.github.alirezajavan.permpilot/PermissionPersistence.markRequested|markRequested(io.github.alirezajavan.permpilot.Permission){}[0]
 }
 
 sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alirezajavan.permpilot/Permission|null[0]
@@ -68,6 +107,22 @@ sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alir
         final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Calendar.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Calendar.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Calendar.toString|toString(){}[0]
+    }
+
+    final class Health : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Health|null[0]
+        constructor <init>(kotlin.collections/Set<io.github.alirezajavan.permpilot/HealthDataType>, io.github.alirezajavan.permpilot/HealthAccess = ...) // io.github.alirezajavan.permpilot/Permission.Health.<init>|<init>(kotlin.collections.Set<io.github.alirezajavan.permpilot.HealthDataType>;io.github.alirezajavan.permpilot.HealthAccess){}[0]
+
+        final val access // io.github.alirezajavan.permpilot/Permission.Health.access|{}access[0]
+            final fun <get-access>(): io.github.alirezajavan.permpilot/HealthAccess // io.github.alirezajavan.permpilot/Permission.Health.access.<get-access>|<get-access>(){}[0]
+        final val dataTypes // io.github.alirezajavan.permpilot/Permission.Health.dataTypes|{}dataTypes[0]
+            final fun <get-dataTypes>(): kotlin.collections/Set<io.github.alirezajavan.permpilot/HealthDataType> // io.github.alirezajavan.permpilot/Permission.Health.dataTypes.<get-dataTypes>|<get-dataTypes>(){}[0]
+
+        final fun component1(): kotlin.collections/Set<io.github.alirezajavan.permpilot/HealthDataType> // io.github.alirezajavan.permpilot/Permission.Health.component1|component1(){}[0]
+        final fun component2(): io.github.alirezajavan.permpilot/HealthAccess // io.github.alirezajavan.permpilot/Permission.Health.component2|component2(){}[0]
+        final fun copy(kotlin.collections/Set<io.github.alirezajavan.permpilot/HealthDataType> = ..., io.github.alirezajavan.permpilot/HealthAccess = ...): io.github.alirezajavan.permpilot/Permission.Health // io.github.alirezajavan.permpilot/Permission.Health.copy|copy(kotlin.collections.Set<io.github.alirezajavan.permpilot.HealthDataType>;io.github.alirezajavan.permpilot.HealthAccess){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.Health.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.Health.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.Health.toString|toString(){}[0]
     }
 
     final object ActivityRecognition : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.ActivityRecognition|null[0]
@@ -92,6 +147,18 @@ sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alir
         final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.AudioFiles.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.AudioFiles.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.AudioFiles.toString|toString(){}[0]
+    }
+
+    final object BluetoothAdvertise : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BluetoothAdvertise|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.BluetoothAdvertise.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.BluetoothAdvertise.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.BluetoothAdvertise.toString|toString(){}[0]
+    }
+
+    final object BluetoothConnect : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BluetoothConnect|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.BluetoothConnect.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.BluetoothConnect.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.BluetoothConnect.toString|toString(){}[0]
     }
 
     final object BluetoothScan : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.BluetoothScan|null[0]
@@ -142,6 +209,12 @@ sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alir
         final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ExactAlarm.toString|toString(){}[0]
     }
 
+    final object FullScreenIntent : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.FullScreenIntent|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.FullScreenIntent.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.FullScreenIntent.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.FullScreenIntent.toString|toString(){}[0]
+    }
+
     final object IgnoreBatteryOptimizations : io.github.alirezajavan.permpilot/Permission.Special { // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations|null[0]
         final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.IgnoreBatteryOptimizations.hashCode|hashCode(){}[0]
@@ -170,6 +243,12 @@ sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alir
         final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.equals|equals(kotlin.Any?){}[0]
         final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.hashCode|hashCode(){}[0]
         final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.ManageExternalStorage.toString|toString(){}[0]
+    }
+
+    final object MediaLocation : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.MediaLocation|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/Permission.MediaLocation.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/Permission.MediaLocation.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/Permission.MediaLocation.toString|toString(){}[0]
     }
 
     final object Microphone : io.github.alirezajavan.permpilot/Permission.Runtime { // io.github.alirezajavan.permpilot/Permission.Microphone|null[0]
@@ -281,6 +360,56 @@ sealed interface io.github.alirezajavan.permpilot/Permission { // io.github.alir
     }
 }
 
+sealed interface io.github.alirezajavan.permpilot/PermissionEvent { // io.github.alirezajavan.permpilot/PermissionEvent|null[0]
+    abstract val permission // io.github.alirezajavan.permpilot/PermissionEvent.permission|{}permission[0]
+        abstract fun <get-permission>(): io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/PermissionEvent.permission.<get-permission>|<get-permission>(){}[0]
+
+    final class RequestResult : io.github.alirezajavan.permpilot/PermissionEvent { // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/Permission.Runtime, io.github.alirezajavan.permpilot/PermissionState) // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.<init>|<init>(io.github.alirezajavan.permpilot.Permission.Runtime;io.github.alirezajavan.permpilot.PermissionState){}[0]
+
+        final val permission // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.permission|{}permission[0]
+            final fun <get-permission>(): io.github.alirezajavan.permpilot/Permission.Runtime // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.permission.<get-permission>|<get-permission>(){}[0]
+        final val result // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.result|{}result[0]
+            final fun <get-result>(): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.result.<get-result>|<get-result>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/Permission.Runtime // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.component1|component1(){}[0]
+        final fun component2(): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.component2|component2(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/Permission.Runtime = ..., io.github.alirezajavan.permpilot/PermissionState = ...): io.github.alirezajavan.permpilot/PermissionEvent.RequestResult // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.copy|copy(io.github.alirezajavan.permpilot.Permission.Runtime;io.github.alirezajavan.permpilot.PermissionState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionEvent.RequestResult.toString|toString(){}[0]
+    }
+
+    final class RequestStarted : io.github.alirezajavan.permpilot/PermissionEvent { // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/Permission.Runtime) // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.<init>|<init>(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+
+        final val permission // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.permission|{}permission[0]
+            final fun <get-permission>(): io.github.alirezajavan.permpilot/Permission.Runtime // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.permission.<get-permission>|<get-permission>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/Permission.Runtime // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.component1|component1(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/Permission.Runtime = ...): io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.copy|copy(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionEvent.RequestStarted.toString|toString(){}[0]
+    }
+
+    final class StateChanged : io.github.alirezajavan.permpilot/PermissionEvent { // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged|null[0]
+        constructor <init>(io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState) // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.<init>|<init>(io.github.alirezajavan.permpilot.Permission;io.github.alirezajavan.permpilot.PermissionState){}[0]
+
+        final val newState // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.newState|{}newState[0]
+            final fun <get-newState>(): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.newState.<get-newState>|<get-newState>(){}[0]
+        final val permission // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.permission|{}permission[0]
+            final fun <get-permission>(): io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.permission.<get-permission>|<get-permission>(){}[0]
+
+        final fun component1(): io.github.alirezajavan.permpilot/Permission // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.component1|component1(){}[0]
+        final fun component2(): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.component2|component2(){}[0]
+        final fun copy(io.github.alirezajavan.permpilot/Permission = ..., io.github.alirezajavan.permpilot/PermissionState = ...): io.github.alirezajavan.permpilot/PermissionEvent.StateChanged // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.copy|copy(io.github.alirezajavan.permpilot.Permission;io.github.alirezajavan.permpilot.PermissionState){}[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // io.github.alirezajavan.permpilot/PermissionEvent.StateChanged.toString|toString(){}[0]
+    }
+}
+
 sealed interface io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState|null[0]
     final class ConfigurationError : io.github.alirezajavan.permpilot/PermissionState { // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError|null[0]
         constructor <init>(io.github.alirezajavan.permpilot/ConfigurationErrorReason) // io.github.alirezajavan.permpilot/PermissionState.ConfigurationError.<init>|<init>(io.github.alirezajavan.permpilot.ConfigurationErrorReason){}[0]
@@ -349,6 +478,8 @@ sealed interface io.github.alirezajavan.permpilot/PermissionState { // io.github
 final class io.github.alirezajavan.permpilot/FakePermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/FakePermissionController|null[0]
     constructor <init>(io.github.alirezajavan.permpilot/PermissionState = ...) // io.github.alirezajavan.permpilot/FakePermissionController.<init>|<init>(io.github.alirezajavan.permpilot.PermissionState){}[0]
 
+    final val events // io.github.alirezajavan.permpilot/FakePermissionController.events|{}events[0]
+        final fun <get-events>(): kotlinx.coroutines.flow/SharedFlow<io.github.alirezajavan.permpilot/PermissionEvent> // io.github.alirezajavan.permpilot/FakePermissionController.events.<get-events>|<get-events>(){}[0]
     final val openAppSettingsCalls // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettingsCalls|{}openAppSettingsCalls[0]
         final fun <get-openAppSettingsCalls>(): kotlin.collections/List<io.github.alirezajavan.permpilot/Permission?> // io.github.alirezajavan.permpilot/FakePermissionController.openAppSettingsCalls.<get-openAppSettingsCalls>|<get-openAppSettingsCalls>(){}[0]
     final val requestCalls // io.github.alirezajavan.permpilot/FakePermissionController.requestCalls|{}requestCalls[0]
@@ -363,8 +494,18 @@ final class io.github.alirezajavan.permpilot/FakePermissionController : io.githu
     final suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/FakePermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
 }
 
+final class io.github.alirezajavan.permpilot/InMemoryPermissionPersistence : io.github.alirezajavan.permpilot/PermissionPersistence { // io.github.alirezajavan.permpilot/InMemoryPermissionPersistence|null[0]
+    constructor <init>() // io.github.alirezajavan.permpilot/InMemoryPermissionPersistence.<init>|<init>(){}[0]
+
+    final fun isRequested(io.github.alirezajavan.permpilot/Permission): kotlin/Boolean // io.github.alirezajavan.permpilot/InMemoryPermissionPersistence.isRequested|isRequested(io.github.alirezajavan.permpilot.Permission){}[0]
+    final fun markRequested(io.github.alirezajavan.permpilot/Permission) // io.github.alirezajavan.permpilot/InMemoryPermissionPersistence.markRequested|markRequested(io.github.alirezajavan.permpilot.Permission){}[0]
+}
+
 final class io.github.alirezajavan.permpilot/IosPermissionController : io.github.alirezajavan.permpilot/PermissionController { // io.github.alirezajavan.permpilot/IosPermissionController|null[0]
     constructor <init>() // io.github.alirezajavan.permpilot/IosPermissionController.<init>|<init>(){}[0]
+
+    final val events // io.github.alirezajavan.permpilot/IosPermissionController.events|{}events[0]
+        final fun <get-events>(): kotlinx.coroutines.flow/SharedFlow<io.github.alirezajavan.permpilot/PermissionEvent> // io.github.alirezajavan.permpilot/IosPermissionController.events.<get-events>|<get-events>(){}[0]
 
     final fun openAppSettings() // io.github.alirezajavan.permpilot/IosPermissionController.openAppSettings|openAppSettings(){}[0]
     final fun openAppSettings(io.github.alirezajavan.permpilot/Permission.Special) // io.github.alirezajavan.permpilot/IosPermissionController.openAppSettings|openAppSettings(io.github.alirezajavan.permpilot.Permission.Special){}[0]
@@ -373,3 +514,5 @@ final class io.github.alirezajavan.permpilot/IosPermissionController : io.github
     final suspend fun request(io.github.alirezajavan.permpilot/Permission.Runtime): io.github.alirezajavan.permpilot/PermissionState // io.github.alirezajavan.permpilot/IosPermissionController.request|request(io.github.alirezajavan.permpilot.Permission.Runtime){}[0]
     final suspend fun requestAll(kotlin/Array<out io.github.alirezajavan.permpilot/Permission.Runtime>...): kotlin.collections/Map<io.github.alirezajavan.permpilot/Permission, io.github.alirezajavan.permpilot/PermissionState> // io.github.alirezajavan.permpilot/IosPermissionController.requestAll|requestAll(kotlin.Array<out|io.github.alirezajavan.permpilot.Permission.Runtime>...){}[0]
 }
+
+final fun (io.github.alirezajavan.permpilot/PermissionController.Companion).io.github.alirezajavan.permpilot/create(): io.github.alirezajavan.permpilot/PermissionController // io.github.alirezajavan.permpilot/create|create@io.github.alirezajavan.permpilot.PermissionController.Companion(){}[0]

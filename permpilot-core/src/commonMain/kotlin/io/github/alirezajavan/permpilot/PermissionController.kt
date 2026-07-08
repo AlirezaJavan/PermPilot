@@ -1,8 +1,16 @@
 package io.github.alirezajavan.permpilot
 
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface PermissionController {
+    companion object
+
+    /**
+     * A stream of all [PermissionEvent]s processed by this controller.
+     */
+    val events: SharedFlow<PermissionEvent>
+
     fun state(permission: Permission): StateFlow<PermissionState>
 
     suspend fun request(permission: Permission.Runtime): PermissionState

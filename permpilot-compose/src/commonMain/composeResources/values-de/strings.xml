@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permpilot_rationale_title">Berechtigung Erforderlich</string>
+    <string name="permpilot_rationale_text">Diese App benötigt Zugriff auf Ihre %1$s, um ordnungsgemäß zu funktionieren.</string>
+    <string name="permpilot_rationale_confirm">Zulassen</string>
+    <string name="permpilot_rationale_dismiss">Ablehnen</string>
+
+    <string name="permpilot_restricted_title">Zugriff Eingeschränkt</string>
+    <string name="permpilot_restricted_text">Der Zugriff auf %1$s ist durch eine Geräterichtlinie (z. B. Kindersicherung oder ein MDM-Profil) eingeschränkt und kann nicht in dieser App oder deren Einstellungen geändert werden.</string>
+    <string name="permpilot_restricted_confirm">OK</string>
+
+    <string name="permpilot_error_title">PermPilot Konfigurationsfehler</string>
+    <string name="permpilot_error_text">%1$s kann nicht angefordert werden: %2$s</string>
+    <string name="permpilot_error_confirm">OK</string>
+
+    <string name="permpilot_error_no_host_activity">rememberPermissionController() wurde nie in einen Activity-gehosteten Bildschirm eingebunden, daher gibt es keinen Ort, an dem der Systemberechtigungsdialog angezeigt werden kann.</string>
+    <string name="permpilot_error_missing_usage_description">die Info.plist-Nutzungsbeschreibungsschlüssel für %1$s fehlen.</string>
+    <string name="permpilot_error_missing_manifest_declaration">im AndroidManifest fehlt, was %1$s benötigt -- eine &lt;uses-permission&gt;-Deklaration (für DoNotDisturbAccess: ACCESS_NOTIFICATION_POLICY) oder ein deklarierter NotificationListenerService für NotificationListenerAccess.</string>
+    <string name="permpilot_error_health_unavailable">die OS-Health-API ist auf diesem Gerät nicht verfügbar (z. B. ist Health Connect unter Android nicht installiert oder HealthKit ist unter iOS eingeschränkt).</string>
+
+    <string name="permpilot_settings_title">Berechtigung Abgelehnt</string>
+    <string name="permpilot_settings_text">Sie haben die Berechtigung %1$s abgelehnt. Bitte aktivieren Sie diese in den Einstellungen.</string>
+    <string name="permpilot_settings_confirm">Einstellungen öffnen</string>
+    <string name="permpilot_settings_dismiss">Abbrechen</string>
+</resources>
