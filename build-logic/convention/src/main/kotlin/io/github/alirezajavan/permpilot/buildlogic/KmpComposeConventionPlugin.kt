@@ -15,6 +15,7 @@ class KmpComposeConventionPlugin : Plugin<Project> {
 
             val composeVersion = libs.findVersionString("compose-multiplatform")
             val composeMaterial3Version = libs.findVersionString("compose-material3")
+            val iconsVersion = "1.7.3"
 
             extensions.configure<KotlinMultiplatformExtension> {
                 sourceSets.apply {
@@ -22,6 +23,8 @@ class KmpComposeConventionPlugin : Plugin<Project> {
                         implementation("org.jetbrains.compose.runtime:runtime:$composeVersion")
                         implementation("org.jetbrains.compose.foundation:foundation:$composeVersion")
                         implementation("org.jetbrains.compose.material3:material3:$composeMaterial3Version")
+                        implementation("org.jetbrains.compose.material:material-icons-core:$iconsVersion")
+                        implementation("org.jetbrains.compose.material:material-icons-extended:$iconsVersion")
                         implementation("org.jetbrains.compose.ui:ui:$composeVersion")
                         implementation("org.jetbrains.compose.components:components-resources:$composeVersion")
                         implementation("org.jetbrains.compose.ui:ui-tooling-preview:$composeVersion")
